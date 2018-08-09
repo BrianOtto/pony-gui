@@ -30,6 +30,7 @@ IF %ERRORLEVEL% NEQ 0 (
 REM Copy the DLLs to the output directory
 XCOPY /Y /E %SRC%\sdl\SDL2.dll %OUT% 1>NUL
 XCOPY /Y /E %SRC%\sdl-gfx\SDL2_GFX.dll %OUT% 1>NUL
+XCOPY /Y /E %SRC%\sdl-ttf\*.dll %OUT% 1>NUL
 
 ECHO.
 

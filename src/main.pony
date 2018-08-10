@@ -104,7 +104,7 @@ class App
         color.b = 0x00
         color.a = 0xFF
         
-        let surfaceTTF = ttf.RenderTextSolid(font, "Hello TTF !", color)
+        let surfaceTTF = ttf.RenderTextBlended(font, "Hello TTF !", color)
         
         if surfaceTTF.is_null() then
             logAndExit("font surface error")
@@ -135,8 +135,8 @@ class App
             
             // draw our circle
             
-            let circle = gfx.CircleColor(renderer, 400, 300, 200, 0xFF0000FF)
-            // Debug.out("circle = ".add(circle.string()))
+            gfx.FilledCircleColor(renderer, 400, 300, 200, 0xFF0000FF)
+            gfx.AACircleColor(renderer, 400, 300, 200, 0xFF0000FF)
             
             // draw our image
             

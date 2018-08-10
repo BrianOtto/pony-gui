@@ -24,6 +24,14 @@ primitive OpenFont
     fun @apply(file: String, ptsize: I32): Pointer[Font] =>
         @TTF_OpenFont[Pointer[Font]](file.cstring(), ptsize)
 
+primitive RenderTextBlended
+    fun @apply(font: Pointer[Font], text: String, color: sdl.Color): Pointer[sdl.Surface] =>
+        @TTF_RenderText_Blended[Pointer[sdl.Surface]](font, text.cstring(), color)
+
+primitive RenderTextShaded
+    fun @apply(font: Pointer[Font], text: String, color: sdl.Color): Pointer[sdl.Surface] =>
+        @TTF_RenderText_Shaded[Pointer[sdl.Surface]](font, text.cstring(), color)
+
 primitive RenderTextSolid
     fun @apply(font: Pointer[Font], text: String, color: sdl.Color): Pointer[sdl.Surface] =>
         @TTF_RenderText_Solid[Pointer[sdl.Surface]](font, text.cstring(), color)

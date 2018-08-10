@@ -82,7 +82,7 @@ class App
         
         var rectIMG = sdl.Rect
         
-        @SDL_QueryTexture[U32](textIMG, Pointer[U32], Pointer[I32], addressof rectIMG.w, addressof rectIMG.h)
+        sdl.QueryTexture(textIMG, Pointer[U32], Pointer[I32], rectIMG)
         
         rectIMG.x = (windowW - rectIMG.w) / 2
         rectIMG.y = (windowH - rectIMG.h) / 2
@@ -116,7 +116,7 @@ class App
         
         var rectTTF = sdl.Rect
         
-        @SDL_QueryTexture[U32](textTTF, Pointer[U32], Pointer[I32], addressof rectTTF.w, addressof rectTTF.h)
+        sdl.QueryTexture(textTTF, Pointer[U32], Pointer[I32], rectTTF)
         
         rectTTF.x = (windowW - rectTTF.w) / 2
         rectTTF.y = (300 - 200 - rectTTF.h) / 2

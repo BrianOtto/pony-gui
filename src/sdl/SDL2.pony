@@ -1,7 +1,5 @@
 use "lib:sdl/SDL2" if windows
 
-use "debug"
-
 // Flags - Event
 
 primitive EVENTQUIT
@@ -161,18 +159,8 @@ primitive PollEvent
         @SDL_PollEvent[I32](event)
 
 primitive QueryTexture
-    fun @apply(texture: Pointer[Texture], format: Pointer[U32], access: Pointer[I32], 
-               w: Pointer[I32], h: Pointer[I32]): U32 =>
-        
-        // Pony does not allow us to pass a pointer to a struct member
-        // and so this function can not be wrapped and must be called directly
-        // e.g. @SDL_QueryTexture[U32](texture, Pointer[U32], Pointer[I32], addressof rect.w, addressof rect.h)
-        
-        try error else Debug.out("Please see the note in SDL2.pony @ QueryTexture") end
-        
-        // @SDL_QueryTexture[U32](texture, format, access, w, h)
-        
-        -1
+    fun @apply(texture: Pointer[Texture], format: Pointer[U32], access: Pointer[I32], rect: Rect): U32 =>
+        @SDL_QueryTexture[U32](texture, Pointer[U32], Pointer[I32], addressof rect.w, addressof rect.h)
 
 primitive RenderClear
     fun @apply(renderer: Pointer[Renderer]): U32 =>

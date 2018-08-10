@@ -2,58 +2,122 @@ use "debug"
 
 use sdl = "sdl"
 use gfx = "sdl-gfx"
+use img = "sdl-image"
 use ttf = "sdl-ttf"
 
 actor Main
     new create(env: Env) =>
-        let init = sdl.Init(sdl.INITVIDEO())
-        Debug.out("init = ".add(init.string()))
+        App(env).init()
+
+class App
+    var out: Env
+    
+    var initSDL: U32 = 0
+    var initIMG: I32 = 0
+    var initTTF: U32 = 0
+    
+    var window: Pointer[sdl.Window] = Pointer[sdl.Window]
+    var renderer: Pointer[sdl.Renderer] = Pointer[sdl.Renderer]
+    
+    new create(env: Env) =>
+        out = env
+    
+    fun ref init() =>
+        // initialize SDL
         
-        if init != 0 then
-            Debug.out("init error")
+        initSDL = sdl.Init(sdl.INITVIDEO())
+        Debug.out("initSDL = ".add(initSDL.string()))
+        
+        if initSDL != 0 then
+            logAndExit("init sdl error")
         end
         
-        let window = sdl.CreateWindow("Hello World!", 100, 100, 800, 600, sdl.WINDOWSHOWN())
+        // create our window
+        
+        window = sdl.CreateWindow("Hello World !", 100, 100, 800, 600, sdl.WINDOWSHOWN())
         Debug.out("window = ".add(window.usize().string()))
         
         if window.is_null() then
-        	Debug.out("window error")
-        	
-        	sdl.Quit()
+        	logAndExit("create window error")
         end
-
+        
+        // create our renderer
+        
         let rFlags = sdl.RENDERERACCELERATED() or sdl.RENDERERPRESENTVSYNC()
-        let renderer = sdl.CreateRenderer(window, -1, rFlags)
+        renderer = sdl.CreateRenderer(window, -1, rFlags)
         Debug.out("renderer = ".add(renderer.usize().string()))
         
         if renderer.is_null() then
-        	Debug.out("renderer error")
-        	
-        	sdl.DestroyWindow(window)
-        	sdl.Quit()
+        	logAndExit("create renderer error")
         end
         
-        let initTTF = ttf.Init()
+        // initialize SDL Image
+        
+        let iFlags = img.INITJPG() or img.INITPNG()
+        initIMG = img.Init(iFlags)
+        Debug.out("initIMG = ".add(initIMG.string()))
+        
+        if initIMG == 0 then
+            logAndExit("init img error")
+        end
+        
+        if ((initIMG and iFlags) != iFlags) then
+            logAndExit("init img flags error")
+        end
+        
+        // load our image
+        
+        let image = img.Load("res/images/sample.png")
+        
+        if image.is_null() then
+            logAndExit("load image error")
+        end
+        
+        let textIMG = sdl.CreateTextureFromSurface(renderer, image)
+        sdl.FreeSurface(image)
+        
+        var rectIMG = sdl.Rect
+        rectIMG.x = 20
+        rectIMG.y = 100
+        
+        // initialize SDL TTF
+        
+        initTTF = ttf.Init()
         Debug.out("initTTF = ".add(initTTF.string()))
         
-        if initTTF == -1 then
-            Debug.out("init ttf error = ".add(String.from_cstring(ttf.GetError())))
-        	
-        	sdl.DestroyWindow(window)
-        	sdl.Quit()
+        if initTTF != 0 then
+            logAndExit("init ttf error")
         end
+        
+        // load our font
         
         let font = ttf.OpenFont("res/fonts/OpenSans/OpenSans-Regular.ttf", 24)
         Debug.out("font = ".add(font.usize().string()))
         
         if font.is_null() then
-            Debug.out("font error = ".add(String.from_cstring(ttf.GetError())))
-        	
-        	ttf.Quit()
-        	
-        	sdl.DestroyWindow(window)
-        	sdl.Quit()
+            logAndExit("load font error")
         end
+        
+        var color = sdl.Color
+        color.r = 0x00
+        color.g = 0x00
+        color.b = 0x00
+        color.a = 0xFF
+        
+        let surfaceTTF = ttf.RenderTextSolid(font, "Hello TTF !", color)
+        
+        if surfaceTTF.is_null() then
+            logAndExit("font surface error")
+    	end
+        
+        let textTTF = sdl.CreateTextureFromSurface(renderer, surfaceTTF)
+        sdl.FreeSurface(surfaceTTF)
+        
+        var rectTTF = sdl.Rect
+        rectTTF.x = 20
+        rectTTF.y = 20
+        
+        // event polling
         
         var event: sdl.Event ref = sdl.Event
         
@@ -64,52 +128,57 @@ actor Main
                 end
             end
             
+            // draw our background
             sdl.SetRenderDrawColor(renderer, 0x00, 0x00, 0xFF, 0xFF)
+            
             sdl.RenderClear(renderer)
+            
+            // draw our circle
             
             let circle = gfx.CircleColor(renderer, 400, 300, 200, 0xFF0000FF)
             // Debug.out("circle = ".add(circle.string()))
             
-            var color = sdl.Color
-            color.r = 0x00
-            color.g = 0xFF
-            color.b = 0x00
-            color.a = 0xFF
+            // draw our image
             
-            // TODO: Why is the color changing!!
+            @SDL_QueryTexture[U32](textIMG, Pointer[U32], Pointer[I32], addressof rectIMG.w, addressof rectIMG.h)
+            sdl.RenderCopy(renderer, textIMG, Pointer[sdl.Rect], MaybePointer[sdl.Rect](rectIMG))
             
-            let surface = ttf.RenderTextSolid(font, "Hello TTF!", color)
+            // draw our text
             
-            if surface.is_null() then
-                Debug.out("ttf surface error = ".add(String.from_cstring(ttf.GetError())))
-        	    
-            	ttf.Quit()
-            	
-            	sdl.DestroyWindow(window)
-            	sdl.Quit()
-            end
+            @SDL_QueryTexture[U32](textTTF, Pointer[U32], Pointer[I32], addressof rectTTF.w, addressof rectTTF.h)
+            sdl.RenderCopy(renderer, textTTF, Pointer[sdl.Rect], MaybePointer[sdl.Rect](rectTTF))
             
-            let texture = sdl.CreateTextureFromSurface(renderer, surface)
-            sdl.FreeSurface(surface)
-            
-            var rectangle = sdl.Rect
-            rectangle.x = 10
-            rectangle.y = 10
-            
-            @SDL_QueryTexture[U32](texture, Pointer[U32], Pointer[I32], addressof rectangle.w, addressof rectangle.h)
-            // Debug.out("rect w = ".add(rectangle.w.string()))
-            // Debug.out("rect h = ".add(rectangle.h.string()))
-            
-            sdl.RenderCopy(renderer, texture, Pointer[sdl.Rect], MaybePointer[sdl.Rect](rectangle))
+            // display everything
             sdl.RenderPresent(renderer)
-            
-            sdl.Delay(1000)
         end
         
         ttf.CloseFont(font)
-        ttf.Quit()
         
-        sdl.DestroyRenderer(renderer)
-        sdl.DestroyWindow(window)
+        logAndExit()
+    
+    fun ref logAndExit(msg: String = "") =>
+        if initTTF == 0 then
+            ttf.Quit()
+        end
         
-        sdl.Quit()
+        if initIMG > 0 then
+            img.Quit()
+        end
+        
+        if not renderer.is_null() then
+            sdl.DestroyRenderer(renderer)
+        end
+        
+        if not window.is_null() then
+            sdl.DestroyWindow(window)
+        end
+        
+        if initSDL == 0 then
+            sdl.Quit()
+        end
+        
+        if msg != "" then
+            out.out.print(msg.add(" = ".add(String.from_cstring(sdl.GetError()))))
+        end
+        
+        out.exitcode(1)

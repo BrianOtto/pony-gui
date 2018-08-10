@@ -28,12 +28,15 @@ IF %ERRORLEVEL% NEQ 0 (
 )
 
 REM Copy the DLLs to the output directory
-XCOPY /Y /E %SRC%\sdl\SDL2.dll %OUT% 1>NUL
-XCOPY /Y /E %SRC%\sdl-gfx\SDL2_GFX.dll %OUT% 1>NUL
+XCOPY /Y /E %SRC%\sdl\*.dll %OUT% 1>NUL
+XCOPY /Y /E %SRC%\sdl-gfx\*.dll %OUT% 1>NUL
 XCOPY /Y /E %SRC%\sdl-ttf\*.dll %OUT% 1>NUL
+
+REM This must be copied after TTF so that we get the newer zlib1.dll
+XCOPY /Y /E %SRC%\sdl-image\*.dll %OUT% 1>NUL
 
 ECHO.
 
 %OUT%\%BIN%
 
-EXIT /B 0
+EXIT /B %ERRORLEVEL%

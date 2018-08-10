@@ -34,7 +34,11 @@ class App
         
         // create our window
         
-        window = sdl.CreateWindow("Hello World !", 100, 100, 800, 600, sdl.WINDOWSHOWN())
+        let windowW: I32 = 800
+        let windowH: I32 = 600
+        
+        let wFlags = sdl.WINDOWSHOWN() // or sdl.WINDOWRESIZABLE()
+        window = sdl.CreateWindow("Pony GUI", 100, 100, windowW, windowH, wFlags)
         Debug.out("window = ".add(window.usize().string()))
         
         if window.is_null() then
@@ -77,8 +81,11 @@ class App
         sdl.FreeSurface(image)
         
         var rectIMG = sdl.Rect
-        rectIMG.x = 20
-        rectIMG.y = 100
+        
+        @SDL_QueryTexture[U32](textIMG, Pointer[U32], Pointer[I32], addressof rectIMG.w, addressof rectIMG.h)
+        
+        rectIMG.x = (windowW - rectIMG.w) / 2
+        rectIMG.y = (windowH - rectIMG.h) / 2
         
         // initialize SDL TTF
         
@@ -91,20 +98,14 @@ class App
         
         // load our font
         
-        let font = ttf.OpenFont("res/fonts/OpenSans/OpenSans-Regular.ttf", 24)
+        let font = ttf.OpenFont("res/fonts/OpenSans/OpenSans-Regular.ttf", 32)
         Debug.out("font = ".add(font.usize().string()))
         
         if font.is_null() then
             logAndExit("load font error")
         end
         
-        var color = sdl.Color
-        color.r = 0x00
-        color.g = 0x00
-        color.b = 0x00
-        color.a = 0xFF
-        
-        let surfaceTTF = ttf.RenderTextBlended(font, "Hello TTF !", color)
+        let surfaceTTF = ttf.RenderTextBlended(font, "Pony GUI", 0x030307)
         
         if surfaceTTF.is_null() then
             logAndExit("font surface error")
@@ -114,8 +115,11 @@ class App
         sdl.FreeSurface(surfaceTTF)
         
         var rectTTF = sdl.Rect
-        rectTTF.x = 20
-        rectTTF.y = 20
+        
+        @SDL_QueryTexture[U32](textTTF, Pointer[U32], Pointer[I32], addressof rectTTF.w, addressof rectTTF.h)
+        
+        rectTTF.x = (windowW - rectTTF.w) / 2
+        rectTTF.y = (300 - 200 - rectTTF.h) / 2
         
         // event polling
         
@@ -129,23 +133,21 @@ class App
             end
             
             // draw our background
-            sdl.SetRenderDrawColor(renderer, 0x00, 0x00, 0xFF, 0xFF)
+            sdl.SetRenderDrawColor(renderer, 0x31, 0x3D, 0x78, 0xFF)
             
             sdl.RenderClear(renderer)
             
-            // draw our circle
+            // draw our circle (with an anti-aliased edge)
             
-            gfx.FilledCircleColor(renderer, 400, 300, 200, 0xFF0000FF)
-            gfx.AACircleColor(renderer, 400, 300, 200, 0xFF0000FF)
+            gfx.FilledCircleRGBA(renderer, 400, 300, 200, 0x47, 0x58, 0xAE, 0xFF)
+            gfx.AACircleRGBA(renderer, 400, 300, 200, 0x47, 0x58, 0xAE, 0xFF)
             
             // draw our image
             
-            @SDL_QueryTexture[U32](textIMG, Pointer[U32], Pointer[I32], addressof rectIMG.w, addressof rectIMG.h)
             sdl.RenderCopy(renderer, textIMG, Pointer[sdl.Rect], MaybePointer[sdl.Rect](rectIMG))
             
             // draw our text
             
-            @SDL_QueryTexture[U32](textTTF, Pointer[U32], Pointer[I32], addressof rectTTF.w, addressof rectTTF.h)
             sdl.RenderCopy(renderer, textTTF, Pointer[sdl.Rect], MaybePointer[sdl.Rect](rectTTF))
             
             // display everything

@@ -53,6 +53,31 @@ primitive RENDERERTARGETTEXTURE
 
 // Flags - Window
 
+primitive WINDOWBORDERLESS
+    fun apply(): U32 => 0x00000010
+
+primitive WINDOWFULLSCREEN
+    fun apply(): U32 => 0x00000001
+
+primitive WINDOWFULLSCREENDESKTOP
+    // uses the current desktop resolution
+    fun apply(): U32 => WINDOWFULLSCREEN() or 0x00001000
+
+primitive WINDOWHIDDEN
+    fun apply(): U32 => 0x00000008
+
+primitive WINDOWMAXIMIZED
+    fun apply(): U32 => 0x00000080
+
+primitive WINDOWMINIMIZED
+    fun apply(): U32 => 0x00000040
+
+primitive WINDOWOPENGL
+    fun apply(): U32 => 0x00000002
+
+primitive WINDOWRESIZABLE
+    fun apply(): U32 => 0x00000020
+
 primitive WINDOWSHOWN
     fun apply(): U32 => 0x00000004
 
@@ -61,10 +86,10 @@ primitive WINDOWSHOWN
 // Structs
 
 struct Color
-    var r: U8 = 0
-    var g: U8 = 0
-    var b: U8 = 0
-    var a: U8 = 0
+    var r: U8 = 0x00
+    var g: U8 = 0x00
+    var b: U8 = 0x00
+    var a: U8 = 0x00
     
     new create() => None
 

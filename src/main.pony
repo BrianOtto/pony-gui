@@ -1,4 +1,6 @@
 use "debug"
+use "files"
+use "regex"
 
 use sdl = "sdl"
 use gfx = "sdl-gfx"
@@ -7,7 +9,7 @@ use ttf = "sdl-ttf"
 
 actor Main
     new create(env: Env) =>
-        App(env).init()
+        try App(env).init()? end
 
 class App
     var out: Env
@@ -22,14 +24,16 @@ class App
     new create(env: Env) =>
         out = env
     
-    fun ref init() =>
+    fun ref init()? =>
+        GUI(this).layout()?
+        
         // initialize SDL
         
         initSDL = sdl.Init(sdl.INITVIDEO())
-        Debug.out("initSDL = ".add(initSDL.string()))
+        Debug.out("initSDL = " + initSDL.string())
         
         if initSDL != 0 then
-            logAndExit("init sdl error")
+            logAndExit("init sdl error")?
         end
         
         // create our window
@@ -39,42 +43,42 @@ class App
         
         let wFlags = sdl.WINDOWSHOWN() // or sdl.WINDOWRESIZABLE()
         window = sdl.CreateWindow("Pony GUI", 100, 100, windowW, windowH, wFlags)
-        Debug.out("window = ".add(window.usize().string()))
+        Debug.out("window = " + window.usize().string())
         
         if window.is_null() then
-        	logAndExit("create window error")
+        	logAndExit("create window error")?
         end
         
         // create our renderer
         
         let rFlags = sdl.RENDERERACCELERATED() or sdl.RENDERERPRESENTVSYNC()
         renderer = sdl.CreateRenderer(window, -1, rFlags)
-        Debug.out("renderer = ".add(renderer.usize().string()))
+        Debug.out("renderer = " + renderer.usize().string())
         
         if renderer.is_null() then
-        	logAndExit("create renderer error")
+        	logAndExit("create renderer error")?
         end
         
         // initialize SDL Image
         
         let iFlags = img.INITJPG() or img.INITPNG()
         initIMG = img.Init(iFlags)
-        Debug.out("initIMG = ".add(initIMG.string()))
+        Debug.out("initIMG = " + initIMG.string())
         
         if initIMG == 0 then
-            logAndExit("init img error")
+            logAndExit("init img error")?
         end
         
         if ((initIMG and iFlags) != iFlags) then
-            logAndExit("init img flags error")
+            logAndExit("init img flags error")?
         end
         
         // load our image
         
-        let image = img.Load("res/images/sample.png")
+        let image = img.Load("sample.png")
         
         if image.is_null() then
-            logAndExit("load image error")
+            logAndExit("load image error")?
         end
         
         let textIMG = sdl.CreateTextureFromSurface(renderer, image)
@@ -90,25 +94,25 @@ class App
         // initialize SDL TTF
         
         initTTF = ttf.Init()
-        Debug.out("initTTF = ".add(initTTF.string()))
+        Debug.out("initTTF = " + initTTF.string())
         
         if initTTF != 0 then
-            logAndExit("init ttf error")
+            logAndExit("init ttf error")?
         end
         
         // load our font
         
-        let font = ttf.OpenFont("res/fonts/OpenSans/OpenSans-Regular.ttf", 32)
-        Debug.out("font = ".add(font.usize().string()))
+        let font = ttf.OpenFont("OpenSans-Regular.ttf", 32)
+        Debug.out("font = " + font.usize().string())
         
         if font.is_null() then
-            logAndExit("load font error")
+            logAndExit("load font error")?
         end
         
         let surfaceTTF = ttf.RenderTextBlended(font, "Pony GUI", 0x030307)
         
         if surfaceTTF.is_null() then
-            logAndExit("font surface error")
+            logAndExit("font surface error")?
     	end
         
         let textTTF = sdl.CreateTextureFromSurface(renderer, surfaceTTF)
@@ -156,9 +160,9 @@ class App
         
         ttf.CloseFont(font)
         
-        logAndExit()
+        logAndExit()?
     
-    fun ref logAndExit(msg: String = "") =>
+    fun ref logAndExit(msg: String = "", isSDL: Bool = true)? =>
         if initTTF == 0 then
             ttf.Quit()
         end
@@ -180,7 +184,38 @@ class App
         end
         
         if msg != "" then
-            out.out.print(msg.add(" = ".add(String.from_cstring(sdl.GetError()))))
+            if isSDL then
+                msg.add(" = " + String.from_cstring(sdl.GetError()))
+            end
+            
+            out.out.print(msg)
         end
         
         out.exitcode(1)
+        
+        error
+
+class GUI
+    var app: App
+    
+    new create(myApp: App) =>
+        app = myApp
+    
+    fun ref layout()? =>
+        let caps = recover val FileCaps.>set(FileRead).>set(FileStat) end
+        let fileName = "layout.gui"
+
+        try
+            with file = OpenFile(FilePath(app.out.root as AmbientAuth, fileName, caps)?) as File do
+                for line in file.lines() do
+                    try
+                        let rEx = Regex("(row \\d\\/\\d.*)|(col \\d\\/\\d.*)|(draw .*)|(text .*)|(load .*)")?
+                        let rMatch = rEx(line)?
+                    end
+                    app.out.out.print(line)
+                end
+            end
+        else
+            app.logAndExit("The \"" + fileName + "\" file is missing or has incorrect permissions.", false)?
+        end
+    

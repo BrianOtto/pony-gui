@@ -1,0 +1,10 @@
+style id "txt-header"
+    center "both"
+
+style id "drw-circle"
+    fill "red"
+    anti-aliased "1"
+    center "both"
+
+style id "img-logo"
+    center "both"

@@ -1,10 +1,10 @@
 style id "txt-header"
-    center "both"
+    center "xy"
 
 style id "drw-circle"
-    fill "red"
+    fill "4758AEFF"
     anti-aliased "1"
-    center "both"
+    center "xy"
 
 style id "img-logo"
-    center "both"
+    center "xy"

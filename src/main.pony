@@ -195,6 +195,8 @@ class App
         
         error
 
+// TODO: Move these classes into separate files
+
 class GUI
     var app: App
     
@@ -204,18 +206,95 @@ class GUI
     fun ref layout()? =>
         let caps = recover val FileCaps.>set(FileRead).>set(FileStat) end
         let fileName = "layout.gui"
-
-        try
-            with file = OpenFile(FilePath(app.out.root as AmbientAuth, fileName, caps)?) as File do
-                for line in file.lines() do
-                    try
-                        let rEx = Regex("(row \\d\\/\\d.*)|(col \\d\\/\\d.*)|(draw .*)|(text .*)|(load .*)")?
-                        let rMatch = rEx(line)?
-                    end
-                    app.out.out.print(line)
-                end
-            end
-        else
+        
+        let filePath = try FilePath(app.out.root as AmbientAuth, fileName, caps)? else 
             app.logAndExit("The \"" + fileName + "\" file is missing or has incorrect permissions.", false)?
+            return // this is only here so that the compiler doesn't complain about filePath being None
         end
+        
+        let file = OpenFile(filePath) as File
+        
+        var lineCount: I32 = 0
+        var lineRows = Array[Row]
+        
+        // TODO: Look into changing the comment syntax to -- or similar
+        let lineRegex = Regex("(^\\s*((row \\d\\/\\d.*)|(col \\d\\/\\d.*)|(draw .*)|(text .*)|(load .*)|(\\/\\/.*)|($)))")?
+        
+        var rowCounter: I32 = 0
+        var colCounter: I32 = 0
+        
+        for line in file.lines() do
+            lineCount = lineCount + 1
+            
+            try
+                if line.size() == 0 then
+                    continue
+                end
+                
+                let lineMatch = lineRegex(line)?
+                
+                let guiCommand: String = try lineMatch(2)?.substring(0, 4).>rstrip() else
+                    continue
+                end
+                
+                let guiProperties: Array[String] = lineMatch(2)?.split_by(" ")
+                
+                match guiCommand
+                | "row" =>
+                    let height = guiProperties(1)?.split_by("/")
+                    
+                    var guiRow = Row
+                    guiRow.height = height(0)?.f32() / height(1)?.f32()
+                    
+                    let gp = guiProperties.values()
+                    
+                    while gp.has_next() do
+                        let key = gp.next()?
+                        
+                        match key
+                        | "id" =>
+                            if gp.has_next() then
+                                guiRow.id = gp.next()?.clone().>strip("\"")
+                            end
+                        end
+                    end
+                    
+                    lineRows.push(guiRow)
+                    
+                    rowCounter = rowCounter + 1
+                // TODO: Add col, text, draw, load and
+                // create entries for missing rows and cols
+                end
+            else
+                app.logAndExit("The \"" + fileName + "\" file has invalid syntax on line " + 
+                                lineCount.string() + ".", false)?
+            end
+        end
+        
+        Debug.out("Rows")
+        
+        let lr = lineRows.values()
+                    
+        while lr.has_next() do
+            let myRow = lr.next()?
+            
+            Debug.out("-----------------")
+            Debug.out("id = " + myRow.id)
+            Debug.out("height = " + myRow.height.string())
+        end
+        
+        Debug.out("-----------------\n")
+
+class Row
+    var id: String = ""
+    var height: F32 = 0
+    var cols: Array[Col] = Array[Col]
+
+    new create() => None
+
+class Col
+    var id: String = ""
+    var width: F32 = 0
+    var commands: Array[String] = Array[String]
     
+    new create() => None

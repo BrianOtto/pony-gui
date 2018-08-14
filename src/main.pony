@@ -1,4 +1,5 @@
 use "debug"
+use "collections"
 use "files"
 use "regex"
 
@@ -25,7 +26,7 @@ class App
         out = env
     
     fun ref init()? =>
-        GUI(this).layout()?
+        Gui(this).layout()?
         
         // initialize SDL
         
@@ -197,7 +198,7 @@ class App
 
 // TODO: Move these classes into separate files
 
-class GUI
+class Gui
     var app: App
     
     new create(myApp: App) =>
@@ -215,13 +216,13 @@ class GUI
         let file = OpenFile(filePath) as File
         
         var lineCount: I32 = 0
-        var lineRows = Array[Row]
+        var lineRows = Array[GuiRow]
         
         // TODO: Look into changing the comment syntax to -- or similar
         let lineRegex = Regex("(^\\s*((row \\d\\/\\d.*)|(col \\d\\/\\d.*)|(draw .*)|(text .*)|(load .*)|(\\/\\/.*)|($)))")?
         
-        var rowCounter: I32 = 0
-        var colCounter: I32 = 0
+        var rowCounter: USize = 0
+        var colCounter: USize = 0
         
         for line in file.lines() do
             lineCount = lineCount + 1
@@ -233,20 +234,20 @@ class GUI
                 
                 let lineMatch = lineRegex(line)?
                 
-                let guiCommand: String = try lineMatch(2)?.substring(0, 4).>rstrip() else
+                let lineCommand: String = try lineMatch(2)?.substring(0, 4).>rstrip() else
                     continue
                 end
                 
+                // TODO: splitting on spaces doesn't work when a value has a space in it, e.g. "Pony GUI"
                 let guiProperties: Array[String] = lineMatch(2)?.split_by(" ")
+                let gp = guiProperties.values()
                 
-                match guiCommand
+                match lineCommand
                 | "row" =>
                     let height = guiProperties(1)?.split_by("/")
                     
-                    var guiRow = Row
+                    var guiRow = GuiRow
                     guiRow.height = height(0)?.f32() / height(1)?.f32()
-                    
-                    let gp = guiProperties.values()
                     
                     while gp.has_next() do
                         let key = gp.next()?
@@ -262,8 +263,65 @@ class GUI
                     lineRows.push(guiRow)
                     
                     rowCounter = rowCounter + 1
-                // TODO: Add col, text, draw, load and
-                // create entries for missing rows and cols
+                    colCounter = 0
+                | "col" =>
+                    if rowCounter == 0 then
+                        var guiRow = GuiRow
+                        guiRow.height = 1
+                        
+                        lineRows.push(guiRow)
+                    
+                        rowCounter = 1
+                    end
+                    
+                    let width = guiProperties(1)?.split_by("/")
+                    
+                    var guiCol = GuiCol
+                    guiCol.width = width(0)?.f32() / width(1)?.f32()
+                    
+                    while gp.has_next() do
+                        let key = gp.next()?
+                        
+                        match key
+                        | "id" =>
+                            if gp.has_next() then
+                                guiCol.id = gp.next()?.clone().>strip("\"")
+                            end
+                        end
+                    end
+                    
+                    try lineRows(rowCounter - 1)?.cols.push(guiCol) end
+                    
+                    colCounter = colCounter + 1
+                | "text" | "draw" | "load" =>
+                    if colCounter == 0 then
+                        var guiCol = GuiCol
+                        guiCol.width = 1
+                        
+                        try lineRows(rowCounter - 1)?.cols.push(guiCol) end
+                    
+                        colCounter = 1
+                    end
+                    
+                    gp.next()?
+                    
+                    var guiCommand = GuiCommand
+                    
+                    while gp.has_next() do
+                        let key = gp.next()?
+                        
+                        if gp.has_next() then
+                            let value = gp.next()?
+                            
+                            if key == "id" then
+                                guiCommand.id = value
+                            else
+                                guiCommand.properties.insert(key, value.clone().>strip("\""))?
+                            end                 
+                        end
+                    end
+                    
+                    try lineRows(rowCounter - 1)?.cols(colCounter - 1)?.commands.push(guiCommand) end
                 end
             else
                 app.logAndExit("The \"" + fileName + "\" file has invalid syntax on line " + 
@@ -271,30 +329,62 @@ class GUI
             end
         end
         
-        Debug.out("Rows")
-        
         let lr = lineRows.values()
                     
         while lr.has_next() do
             let myRow = lr.next()?
             
+            Debug.out("\nRow")
             Debug.out("-----------------")
             Debug.out("id = " + myRow.id)
             Debug.out("height = " + myRow.height.string())
+            
+            let lc = myRow.cols.values()
+            
+            if lc.has_next() then
+                Debug.out("\nCol")
+                
+                while lc.has_next() do
+                    let myCol = lc.next()?
+                    
+                    Debug.out("-----------------")
+                    Debug.out("id = " + myCol.id)
+                    Debug.out("width = " + myCol.width.string())
+                    
+                    let lcommands = myCol.commands.values()
+            
+                    if lcommands.has_next() then
+                        Debug.out("\nCommands")
+                        
+                        while lcommands.has_next() do
+                            let myCommand = lcommands.next()?
+                            
+                            Debug.out("-----------------")
+                            Debug.out("id = " + myCommand.id)
+                        end
+                    end
+                end
+            end
         end
         
         Debug.out("-----------------\n")
 
-class Row
+class GuiRow
     var id: String = ""
     var height: F32 = 0
-    var cols: Array[Col] = Array[Col]
+    var cols: Array[GuiCol] = Array[GuiCol]
 
     new create() => None
 
-class Col
+class GuiCol
     var id: String = ""
     var width: F32 = 0
-    var commands: Array[String] = Array[String]
+    var commands: Array[GuiCommand] = Array[GuiCommand]
     
+    new create() => None
+
+class GuiCommand
+    var id: String = ""
+    var properties: Map[String, String] = Map[String, String]
+
     new create() => None

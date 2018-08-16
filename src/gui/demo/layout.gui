@@ -5,5 +5,5 @@ row 4/6
     draw shape "circle" id "drw-circle"
     load media "image" id "img-logo"
 
-// style import "styles.gui"
-// event import "events.gui"
+-- style import "styles.gui"
+-- event import "events.gui"

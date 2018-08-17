@@ -9,10 +9,8 @@ class Gui
     new create(myApp: App) =>
         app = myApp
     
-    fun ref load()? =>
+    fun ref load(fileName: String = "layout.gui")? =>
         let caps = recover val FileCaps.>set(FileRead).>set(FileStat) end
-        let fileName = "layout.gui"
-        
         let filePath = try FilePath(app.out.root as AmbientAuth, fileName, caps)? else 
             app.logAndExit("The \"" + fileName + "\" file is missing or has incorrect permissions.", false)?
             return // this is only here so that the compiler doesn't complain about filePath being None
@@ -21,7 +19,8 @@ class Gui
         let file = OpenFile(filePath) as File
         
         var lineCount: I32 = 0
-        let lineRegex = Regex("(^\\s*((row \\d\\/\\d.*)|(col \\d\\/\\d.*)|(draw .*)|(text .*)|(load .*)|(--.*)|($)))")?
+        let lineRegex = Regex("(^\\s*((row \\d\\/\\d.*)|(col \\d\\/\\d.*)|" + 
+            "(draw .*)|(text .*)|(load .*)|(style .*)|(event .*)|(--.*)|($)))")?
         
         var rowCounter: USize = 0
         var colCounter: USize = 0
@@ -60,11 +59,10 @@ class Gui
                     lineMatchClean.replace(lmString, lmString.clone().>replace(" ", placeholder))
                 end
                 
-                let guiCommand: String = lineMatchClean.substring(0, 4).>rstrip()
                 let guiProperties: Array[String] = lineMatchClean.split_by(" ")
                 let gp = guiProperties.values()
                 
-                match guiCommand
+                match guiProperties(0)?
                 | "row" =>
                     let height = guiProperties(1)?.split_by("/")
                     
@@ -144,6 +142,20 @@ class Gui
                     end
                     
                     try app.gui(rowCounter - 1)?.cols(colCounter - 1)?.elements.push(guiElement) end
+                | "style" =>
+                    gp.next()?
+                     
+                    while gp.has_next() do
+                        let key = gp.next()?
+                        
+                        if gp.has_next() then
+                            let value = gp.next()?
+                            
+                            if key == "import" then
+                                load(value.clone().>strip("\""))?                                    
+                            end                 
+                        end
+                    end
                 end
             else
                 app.logAndExit("The \"" + fileName + "\" file has invalid syntax on line " + 

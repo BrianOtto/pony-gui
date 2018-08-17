@@ -19,8 +19,8 @@ class Gui
         let file = OpenFile(filePath) as File
         
         var lineCount: I32 = 0
-        let lineRegex = Regex("(^\\s*((row \\d\\/\\d.*)|(col \\d\\/\\d.*)|" + 
-            "(draw .*)|(text .*)|(load .*)|(style .*)|(event .*)|(--.*)|($)))")?
+        let lineRegex = Regex("^(row \\d\\/\\d.*)|(col \\d\\/\\d.*)|" + 
+            "(draw .*)|(text .*)|(load .*)|(style .*)|(event .*)|(--.*)|($)")?
         
         var rowCounter: USize = 0
         var colCounter: USize = 0
@@ -28,18 +28,29 @@ class Gui
         // Group Separator (ASCII 29)
         var placeholder = "\u001D"
         
-        for line in file.lines() do
-            lineCount = lineCount + 1
+        let lines = file.lines()
+        
+        var line: String = ""
+        var prev: String = ""
+        
+        while lines.has_next() do
+            if prev == "" then
+                line = lines.next().clone().>strip()
+                
+                lineCount = lineCount + 1
+            else
+                line = prev
+                prev = ""
+            end
+            
+            if line.size() == 0 then
+                continue
+            end
             
             try
-                if line.size() == 0 then
-                    continue
-                end
-                
                 // display a syntax error when the line doesn't match the expression
-                // otherwise return group 2 into a string that can be iterated on
-                // group 2 = the start of the GUI command (e.g. row 1/6)
-                let lineMatch: String val = lineRegex(line)?(2)?
+                // otherwise return the line as a string that can be iterated on
+                let lineMatch: String val = lineRegex(line)?(0)?
                 let lineMatchClean: String ref = lineMatch.clone()
                 
                 // get all property values (e.g. value "Pony GUI")
@@ -137,25 +148,77 @@ class Gui
                                 guiElement.id = value.clone().>replace(placeholder, " ")
                             else
                                 guiElement.properties.insert(key, value.clone().>strip("\"").>replace(placeholder, " "))?
-                            end                 
+                            end
                         end
                     end
                     
                     try app.gui(rowCounter - 1)?.cols(colCounter - 1)?.elements.push(guiElement) end
-                | "style" =>
+                | "style" | "event" =>
                     gp.next()?
-                     
-                    while gp.has_next() do
+                    
+                    var guiElement = GuiElement
+                    
+                    if gp.has_next() then
                         let key = gp.next()?
                         
                         if gp.has_next() then
                             let value = gp.next()?
                             
-                            if key == "import" then
-                                load(value.clone().>strip("\""))?                                    
-                            end                 
+                            match key
+                            | "import" =>
+                                load(value.clone().>strip("\""))?
+                            | "id" =>
+                                for row in app.gui.values() do
+                                    for col in row.cols.values() do
+                                        for element in col.elements.values() do
+                                            if element.id == value then
+                                                guiElement = element
+                                                break
+                                            end
+                                        end
+                                        
+                                        if guiElement.id != "" then
+                                            break
+                                        end
+                                    end
+                                    
+                                    if guiElement.id != "" then
+                                        break
+                                    end
+                                end
+                            end
                         end
                     end
+                    
+                    if guiElement.id == "" then
+                        continue
+                    end
+                    
+                    while lines.has_next() do
+                        line = lines.next().clone().>strip()
+                        
+                        lineCount = lineCount + 1
+                        
+                        if line.size() == 0 then
+                            continue
+                        end
+                        
+                        let prop: Array[String] = line.split_by(" ")
+                        let propKey = prop(0)?
+                        
+                        if (propKey == "style") or (propKey == "event") then
+                            prev = line
+                            break
+                        else
+                            try
+                                guiElement.properties.insert(
+                                    propKey, prop(1)?.clone().>strip("\"").>replace(placeholder, " ")
+                                )?
+                            end
+                        end
+                    end
+                    
+                    try app.gui(rowCounter - 1)?.cols(colCounter - 1)?.elements.push(guiElement) end
                 end
             else
                 app.logAndExit("The \"" + fileName + "\" file has invalid syntax on line " + 
@@ -164,6 +227,10 @@ class Gui
         end
         
         // some debugging to verify we are parsing things properly
+        
+        if fileName != "layout.gui" then
+            return
+        end
         
         let lr = app.gui.values()
                     

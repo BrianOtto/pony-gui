@@ -3,7 +3,7 @@ row height "1/6"
 
 row height "4/6"
     draw shape "circle" id "drw-circle"
-    load media "image" id "img-logo"
+    load media "image" src "sample.png" id "img-logo"
 
 style import "styles.gui"
 -- event import "events.gui"

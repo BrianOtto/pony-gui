@@ -141,9 +141,8 @@ class Gui
                         colCounter = 1
                     end
                     
-                    gp.next()?
-                    
                     let guiElement = GuiElement
+                    guiElement.command = gp.next()?
                     
                     while gp.has_next() do
                         let key = gp.next()?
@@ -156,6 +155,12 @@ class Gui
                             else
                                 guiElement.properties.insert(key, value)?
                             end
+                        end
+                    end
+                    
+                    if guiElement.command == "load" then
+                        if not guiElement.properties.contains("src") then
+                            error
                         end
                     end
                     
@@ -270,6 +275,7 @@ class Gui
                             
                             Debug.out("-----------------")
                             Debug.out("id = " + myElement.id)
+                            Debug.out("command = " + myElement.command)
                             
                             let lprops = myElement.properties.pairs()
                             

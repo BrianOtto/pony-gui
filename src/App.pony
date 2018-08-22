@@ -17,6 +17,8 @@ class App
     var window: Pointer[sdl.Window] = Pointer[sdl.Window]
     var renderer: Pointer[sdl.Renderer] = Pointer[sdl.Renderer]
     
+    var elements: Array[RenderElement] = Array[RenderElement]
+    
     new create(env: Env) =>
         out = env
     
@@ -71,23 +73,50 @@ class App
             logAndExit("init img flags error")?
         end
         
-        // load our image
-        
-        let image = img.Load("sample.png")
-        
-        if image.is_null() then
-            logAndExit("load image error")?
+        let guiRows = gui.values()
+                    
+        while guiRows.has_next() do
+            let guiRow = guiRows.next()?
+            let guiCols = guiRow.cols.values()
+            
+            while guiCols.has_next() do
+                let guiCol = guiCols.next()?
+                let guiElements = guiCol.elements.values()
+                
+                while guiElements.has_next() do
+                    let guiElement = guiElements.next()?
+                    
+                    match guiElement.command
+                    | "load" =>
+                        let src = guiElement.properties("src")?
+                        
+                        match guiElement.properties("media")?
+                        | "image" =>
+                            // load our image
+                            let image = img.Load(src)
+                            
+                            if image.is_null() then
+                                logAndExit("load image error")?
+                            end
+                            
+                            let texture = sdl.CreateTextureFromSurface(renderer, image)
+                            sdl.FreeSurface(image)
+                            
+                            var rect = sdl.Rect
+                            
+                            sdl.QueryTexture(texture, Pointer[U32], Pointer[I32], rect)
+                            
+                            // TODO: calculate the position from the properties
+                            //       and constrain it to the row height / col width
+                            rect.x = (windowW - rect.w) / 2
+                            rect.y = (windowH - rect.h) / 2
+                            
+                            elements.push(RenderElement(texture, rect))
+                        end
+                    end
+                end
+            end
         end
-        
-        let textIMG = sdl.CreateTextureFromSurface(renderer, image)
-        sdl.FreeSurface(image)
-        
-        var rectIMG = sdl.Rect
-        
-        sdl.QueryTexture(textIMG, Pointer[U32], Pointer[I32], rectIMG)
-        
-        rectIMG.x = (windowW - rectIMG.w) / 2
-        rectIMG.y = (windowH - rectIMG.h) / 2
         
         // initialize SDL TTF
         
@@ -144,8 +173,12 @@ class App
             gfx.FilledCircleRGBA(renderer, 400, 300, 200, 0x47, 0x58, 0xAE, 0xFF)
             gfx.AACircleRGBA(renderer, 400, 300, 200, 0x47, 0x58, 0xAE, 0xFF)
             
-            // draw our image
-            sdl.RenderCopy(renderer, textIMG, Pointer[sdl.Rect], MaybePointer[sdl.Rect](rectIMG))
+            let re = elements.values()
+            
+            while re.has_next() do
+                let element = re.next()?
+                sdl.RenderCopy(renderer, element.texture, Pointer[sdl.Rect], MaybePointer[sdl.Rect](element.rect))
+            end
             
             // draw our text
             sdl.RenderCopy(renderer, textTTF, Pointer[sdl.Rect], MaybePointer[sdl.Rect](rectTTF))

@@ -19,14 +19,13 @@ class Gui
         let file = OpenFile(filePath) as File
         
         var lineCount: I32 = 0
-        let lineRegex = Regex("^(row \\d\\/\\d.*)|(col \\d\\/\\d.*)|" + 
-            "(draw .*)|(text .*)|(load .*)|(style .*)|(event .*)|(--.*)|($)")?
+        let lineRegex = Regex("^((row|col|draw|text|load|style|event) .*)|(--.*)|($)")?
         
         var rowCounter: USize = 0
         var colCounter: USize = 0
         
         // Group Separator (ASCII 29)
-        var placeholder = "\u001D"
+        let placeholder = "\u001D"
         
         let lines = file.lines()
         
@@ -75,18 +74,22 @@ class Gui
                 
                 match guiProperties(0)?
                 | "row" =>
-                    let height = guiProperties(1)?.split_by("/")
+                    gp.next()?
                     
-                    var guiRow = GuiRow
-                    guiRow.height = height(0)?.f32() / height(1)?.f32()
+                    let guiRow = GuiRow
                     
                     while gp.has_next() do
                         let key = gp.next()?
                         
-                        match key
-                        | "id" =>
-                            if gp.has_next() then
-                                guiRow.id = gp.next()?.clone().>strip("\"").>replace(placeholder, " ")
+                        if gp.has_next() then
+                            let value: String val = gp.next()?.clone().>strip("\"").>replace(placeholder, " ")
+                            
+                            match key
+                            | "id" =>
+                                guiRow.id = value
+                            | "height" =>
+                                let height = value.split_by("/")
+                                guiRow.height = height(0)?.f32() / height(1)?.f32()
                             end
                         end
                     end
@@ -97,7 +100,7 @@ class Gui
                     colCounter = 0
                 | "col" =>
                     if rowCounter == 0 then
-                        var guiRow = GuiRow
+                        let guiRow = GuiRow
                         guiRow.height = 1
                         
                         app.gui.push(guiRow)
@@ -105,18 +108,22 @@ class Gui
                         rowCounter = 1
                     end
                     
-                    let width = guiProperties(1)?.split_by("/")
+                    gp.next()?
                     
-                    var guiCol = GuiCol
-                    guiCol.width = width(0)?.f32() / width(1)?.f32()
+                    let guiCol = GuiCol
                     
                     while gp.has_next() do
                         let key = gp.next()?
                         
-                        match key
-                        | "id" =>
-                            if gp.has_next() then
-                                guiCol.id = gp.next()?.clone().>strip("\"").>replace(placeholder, " ")
+                        if gp.has_next() then
+                            let value: String val = gp.next()?.clone().>strip("\"").>replace(placeholder, " ")
+                            
+                            match key
+                            | "id" =>
+                                guiCol.id = value
+                            | "width" =>
+                                let width = value.split_by("/")
+                                guiCol.width = width(0)?.f32() / width(1)?.f32()
                             end
                         end
                     end
@@ -126,7 +133,7 @@ class Gui
                     colCounter = colCounter + 1
                 | "text" | "draw" | "load" =>
                     if colCounter == 0 then
-                        var guiCol = GuiCol
+                        let guiCol = GuiCol
                         guiCol.width = 1
                         
                         try app.gui(rowCounter - 1)?.cols.push(guiCol) end
@@ -136,18 +143,18 @@ class Gui
                     
                     gp.next()?
                     
-                    var guiElement = GuiElement
+                    let guiElement = GuiElement
                     
                     while gp.has_next() do
                         let key = gp.next()?
                         
                         if gp.has_next() then
-                            let value = gp.next()?
+                            let value: String val = gp.next()?.clone().>strip("\"").>replace(placeholder, " ")
                             
                             if key == "id" then
-                                guiElement.id = value.clone().>replace(placeholder, " ")
+                                guiElement.id = value
                             else
-                                guiElement.properties.insert(key, value.clone().>strip("\"").>replace(placeholder, " "))?
+                                guiElement.properties.insert(key, value)?
                             end
                         end
                     end
@@ -162,11 +169,11 @@ class Gui
                         let key = gp.next()?
                         
                         if gp.has_next() then
-                            let value = gp.next()?
+                            let value: String val = gp.next()?.clone().>strip("\"").>replace(placeholder, " ")
                             
                             match key
                             | "import" =>
-                                load(value.clone().>strip("\""))?
+                                load(value)?
                             | "id" =>
                                 for row in app.gui.values() do
                                     for col in row.cols.values() do
@@ -211,9 +218,8 @@ class Gui
                             break
                         else
                             try
-                                guiElement.properties.insert(
-                                    propKey, prop(1)?.clone().>strip("\"").>replace(placeholder, " ")
-                                )?
+                                let propValue: String val = prop(1)?.clone().>strip("\"").>replace(placeholder, " ")
+                                guiElement.properties.insert(propKey, propValue)?
                             end
                         end
                     end

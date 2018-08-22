@@ -1,7 +1,7 @@
-row 1/6
+row height "1/6"
     text value "Pony GUI" id "txt-header"
 
-row 4/6
+row height "4/6"
     draw shape "circle" id "drw-circle"
     load media "image" id "img-logo"
 

@@ -1,10 +1,14 @@
 style id "txt-header"
-    center "xy"
+    x "center"
+    y "center"
 
 style id "drw-circle"
     fill "4758AEFF"
     anti-aliased "1"
-    center "xy"
+    x "center"
+    y "center"
 
 style id "img-logo"
-    center "xy"
+    src "sample.png"
+    x "center"
+    y "center"

@@ -73,15 +73,24 @@ class App
             logAndExit("init img flags error")?
         end
         
+        var hTotal: I32 = 0
+        var wTotal: I32 = 0
+        
         let guiRows = gui.values()
-                    
+        
         while guiRows.has_next() do
             let guiRow = guiRows.next()?
             let guiCols = guiRow.cols.values()
             
+            let h: I32 = (windowH.f32() * guiRow.height).i32()
+            
+            wTotal = 0
+            
             while guiCols.has_next() do
                 let guiCol = guiCols.next()?
                 let guiElements = guiCol.elements.values()
+                
+                let w: I32 = (windowW.f32() * guiCol.width).i32()
                 
                 while guiElements.has_next() do
                     let guiElement = guiElements.next()?
@@ -106,16 +115,37 @@ class App
                             
                             sdl.QueryTexture(texture, Pointer[U32], Pointer[I32], rect)
                             
-                            // TODO: calculate the position from the properties
-                            //       and constrain it to the row height / col width
-                            rect.x = (windowW - rect.w) / 2
-                            rect.y = (windowH - rect.h) / 2
+                            if guiElement.properties.contains("x") then
+                                let guiElementX = guiElement.properties("x")?
+                                
+                                if guiElementX == "center" then
+                                    let rectW = if rect.w > w then w else rect.w end
+                                    rect.x = wTotal + ((w - rectW) / 2)
+                                else
+                                    rect.x = wTotal + try guiElementX.i32()? else 0 end
+                                end
+                            end
+                            
+                            if guiElement.properties.contains("y") then
+                                let guiElementY = guiElement.properties("y")?
+                                
+                                if guiElementY == "center" then
+                                    let rectH = if rect.h > h then h else rect.h end
+                                    rect.y = hTotal + ((h - rectH) / 2)
+                                else
+                                    rect.y = hTotal + try guiElementY.i32()? else 0 end
+                                end
+                            end
                             
                             elements.push(RenderElement(texture, rect))
                         end
                     end
                 end
+                
+                wTotal = wTotal + w
             end
+            
+            hTotal = hTotal + h
         end
         
         // initialize SDL TTF

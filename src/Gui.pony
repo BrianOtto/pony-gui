@@ -158,12 +158,6 @@ class Gui
                         end
                     end
                     
-                    if guiElement.command == "load" then
-                        if not guiElement.properties.contains("src") then
-                            error
-                        end
-                    end
-                    
                     try app.gui(rowCounter - 1)?.cols(colCounter - 1)?.elements.push(guiElement) end
                 | "style" | "event" =>
                     gp.next()?
@@ -226,6 +220,12 @@ class Gui
                                 let propValue: String val = prop(1)?.clone().>strip("\"").>replace(placeholder, " ")
                                 guiElement.properties.insert(propKey, propValue)?
                             end
+                        end
+                    end
+                    
+                    if guiElement.command == "load" then
+                        if not guiElement.properties.contains("src") then
+                            app.logAndExit("The \"load\" command is missing a \"src\" property.", false)?
                         end
                     end
                     

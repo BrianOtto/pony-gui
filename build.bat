@@ -35,12 +35,10 @@ XCOPY /Y /E %SRC%\sdl-ttf\*.dll %OUT% 1>NUL
 REM This must be copied after TTF so that we get the newer zlib1.dll
 XCOPY /Y /E %SRC%\sdl-image\*.dll %OUT% 1>NUL
 
-REM Copy the resources to the output directory
-XCOPY /Y /E res\images\*.* %OUT% 1>NUL
-XCOPY /Y /E res\fonts\OpenSans\*.ttf %OUT% 1>NUL
-
-REM Copy the GUIs to the output directory
+REM Copy the demo application to the output directory
 XCOPY /Y /E %SRC%\gui\demo\*.gui %OUT% 1>NUL
+XCOPY /Y /E %SRC%\gui\demo\images\*.* %OUT% 1>NUL
+XCOPY /Y /E %SRC%\gui\demo\fonts\OpenSans\*.ttf %OUT% 1>NUL
 
 ECHO.
 

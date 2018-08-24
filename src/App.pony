@@ -73,6 +73,15 @@ class App
             logAndExit("init img flags error")?
         end
         
+        // initialize SDL TTF
+        
+        initTTF = ttf.Init()
+        Debug.out("initTTF = " + initTTF.string())
+        
+        if initTTF != 0 then
+            logAndExit("init ttf error")?
+        end
+        
         var hTotal: I32 = 0
         var wTotal: I32 = 0
         
@@ -94,6 +103,7 @@ class App
                 
                 while guiElements.has_next() do
                     let guiElement = guiElements.next()?
+                    var texture = Pointer[sdl.Texture]
                     
                     match guiElement.command
                     | "load" =>
@@ -108,38 +118,47 @@ class App
                                 logAndExit("load image error")?
                             end
                             
-                            let texture = sdl.CreateTextureFromSurface(renderer, image)
+                            texture = sdl.CreateTextureFromSurface(renderer, image)
                             sdl.FreeSurface(image)
-                            
-                            var rect = sdl.Rect
-                            
-                            sdl.QueryTexture(texture, Pointer[U32], Pointer[I32], rect)
-                            
-                            if guiElement.properties.contains("x") then
-                                let guiElementX = guiElement.properties("x")?
-                                
-                                if guiElementX == "center" then
-                                    let rectW = if rect.w > w then w else rect.w end
-                                    rect.x = wTotal + ((w - rectW) / 2)
-                                else
-                                    rect.x = wTotal + try guiElementX.i32()? else 0 end
-                                end
-                            end
-                            
-                            if guiElement.properties.contains("y") then
-                                let guiElementY = guiElement.properties("y")?
-                                
-                                if guiElementY == "center" then
-                                    let rectH = if rect.h > h then h else rect.h end
-                                    rect.y = hTotal + ((h - rectH) / 2)
-                                else
-                                    rect.y = hTotal + try guiElementY.i32()? else 0 end
-                                end
-                            end
-                            
-                            elements.push(RenderElement(texture, rect))
                         end
+                    | "text" =>
+                        let fontName = guiElement.properties("font")?
+                        let fontSize = guiElement.properties("font-size")?.i32()?
+                        
+                        // convert to a hexadecimal string
+                        var fontColorAsString = "0x" + guiElement.properties("font-color")?
+                        
+                        // default to 0 for any missing RGBA values
+                        while fontColorAsString.size() < 10 do
+                            fontColorAsString = fontColorAsString + "0"
+                        end
+                        
+                        // convert to a unsigned integer
+                        let fontColor = try fontColorAsString.u32()? else 0 end
+                        
+                        // load our font
+                        
+                        let font = ttf.OpenFont(fontName, fontSize)
+                        Debug.out("font = " + font.usize().string())
+                        
+                        if font.is_null() then
+                            logAndExit("load font error")?
+                        end
+                        
+                        let fontSurface = ttf.RenderUTF8Blended(font, guiElement.properties("value")?, fontColor)
+                        
+                        if fontSurface.is_null() then
+                            logAndExit("font surface error")?
+                    	end
+                        
+                        texture = sdl.CreateTextureFromSurface(renderer, fontSurface)
+                        sdl.FreeSurface(fontSurface)
+                        
+                        ttf.CloseFont(font)
                     end
+                    
+                    let rect = _getRect(texture, guiElement, w, h, wTotal, hTotal)?
+                    elements.push(RenderElement(texture, rect))
                 end
                 
                 wTotal = wTotal + w
@@ -147,40 +166,6 @@ class App
             
             hTotal = hTotal + h
         end
-        
-        // initialize SDL TTF
-        
-        initTTF = ttf.Init()
-        Debug.out("initTTF = " + initTTF.string())
-        
-        if initTTF != 0 then
-            logAndExit("init ttf error")?
-        end
-        
-        // load our font
-        
-        let font = ttf.OpenFont("OpenSans-Regular.ttf", 32)
-        Debug.out("font = " + font.usize().string())
-        
-        if font.is_null() then
-            logAndExit("load font error")?
-        end
-        
-        let surfaceTTF = ttf.RenderTextBlended(font, "Pony GUI", 0x030307)
-        
-        if surfaceTTF.is_null() then
-            logAndExit("font surface error")?
-    	end
-        
-        let textTTF = sdl.CreateTextureFromSurface(renderer, surfaceTTF)
-        sdl.FreeSurface(surfaceTTF)
-        
-        var rectTTF = sdl.Rect
-        
-        sdl.QueryTexture(textTTF, Pointer[U32], Pointer[I32], rectTTF)
-        
-        rectTTF.x = (windowW - rectTTF.w) / 2
-        rectTTF.y = (300 - 200 - rectTTF.h) / 2
         
         // event polling
         
@@ -210,14 +195,9 @@ class App
                 sdl.RenderCopy(renderer, element.texture, Pointer[sdl.Rect], MaybePointer[sdl.Rect](element.rect))
             end
             
-            // draw our text
-            sdl.RenderCopy(renderer, textTTF, Pointer[sdl.Rect], MaybePointer[sdl.Rect](rectTTF))
-            
             // display everything
             sdl.RenderPresent(renderer)
         end
-        
-        ttf.CloseFont(font)
         
         logAndExit()?
     
@@ -253,3 +233,34 @@ class App
         out.exitcode(1)
         
         error
+    
+    fun ref _getRect(texture: Pointer[sdl.Texture], guiElement: GuiElement, 
+                     w: I32, h: I32, wTotal: I32, hTotal: I32): sdl.Rect ? =>
+        
+        let rect = sdl.Rect
+        
+        sdl.QueryTexture(texture, Pointer[U32], Pointer[I32], rect)
+        
+        if guiElement.properties.contains("x") then
+            let guiElementX = guiElement.properties("x")?
+            
+            if guiElementX == "center" then
+                rect.w = if rect.w > w then w else rect.w end
+                rect.x = wTotal + ((w - rect.w) / 2)
+            else
+                rect.x = wTotal + try guiElementX.i32()? else 0 end
+            end
+        end
+        
+        if guiElement.properties.contains("y") then
+            let guiElementY = guiElement.properties("y")?
+            
+            if guiElementY == "center" then
+                rect.h = if rect.h > h then h else rect.h end
+                rect.y = hTotal + ((h - rect.h) / 2)
+            else
+                rect.y = hTotal + try guiElementY.i32()? else 0 end
+            end
+        end
+        
+        rect

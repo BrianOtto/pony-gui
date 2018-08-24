@@ -84,10 +84,10 @@ primitive WINDOWSHOWN
 // Structs
 
 struct Color
-    var r: U8 = 0x00
-    var g: U8 = 0x00
-    var b: U8 = 0x00
-    var a: U8 = 0x00
+    var r: U8 = 0
+    var g: U8 = 0
+    var b: U8 = 0
+    var a: U8 = 0
     
     new create() => None
 

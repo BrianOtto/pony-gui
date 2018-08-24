@@ -32,6 +32,13 @@ class Gui
         var line: String = ""
         var prev: String = ""
         
+        let rMap = Map[String, Array[String]]
+        
+        rMap.insert("load", ["src"])?
+        rMap.insert("text", ["font"; "font-size"; "font-color"])?
+        
+        let required = rMap.pairs()
+        
         while lines.has_next() do
             if prev == "" then
                 line = lines.next().clone().>strip()
@@ -223,9 +230,22 @@ class Gui
                         end
                     end
                     
-                    if guiElement.command == "load" then
-                        if not guiElement.properties.contains("src") then
-                            app.logAndExit("The \"load\" command is missing a \"src\" property.", false)?
+                    while required.has_next() do
+                        (var rCommand, var rProperties) = required.next()?
+                        
+                        if guiElement.command == rCommand then
+                            let rp = rProperties.values()
+                            
+                            while rp.has_next() do
+                                let rProperty = rp.next()?
+                                
+                                if not guiElement.properties.contains(rProperty) then
+                                    lineCount = lineCount - 1
+                                    
+                                    app.logAndExit("The \"" + rCommand + "\" command is missing a \"" + 
+                                                    rProperty + "\" property.", false)?
+                                end
+                            end
                         end
                     end
                     

@@ -1,4 +1,7 @@
 style id "txt-header"
+    font "OpenSans-Regular.ttf"
+    font-color "030307"
+    font-size "32"
     x "center"
     y "center"
 

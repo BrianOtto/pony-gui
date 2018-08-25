@@ -103,9 +103,102 @@ class App
                 
                 while guiElements.has_next() do
                     let guiElement = guiElements.next()?
+                    
+                    var callbacks: Array[{ref (): Any val}] = []
                     var texture = Pointer[sdl.Texture]
                     
                     match guiElement.command
+                    | "draw" =>
+                        match guiElement.properties("shape")?
+                        | "circle" =>
+                            var x: I32 = 0
+                            var y: I32 = 0
+                            
+                            // TODO: allow radius to be specified as a percentage of w / h (e.g "1/3")
+                            var radius: I32 = try guiElement.properties("radius")?.i32()? else 0 end
+                            radius = if radius > w then w else radius end
+                            radius = if radius > h then h else radius end
+                            
+                            if guiElement.properties.contains("x") then
+                                let guiElementX = guiElement.properties("x")?
+                                
+                                if guiElementX == "center" then
+                                    x = wTotal + ((w - (radius * 2)) / 2) + radius
+                                else
+                                    x = wTotal + try guiElementX.i32()? else 0 end
+                                end
+                            end
+                            
+                            if guiElement.properties.contains("y") then
+                                let guiElementY = guiElement.properties("y")?
+                                
+                                if guiElementY == "center" then
+                                    y = hTotal + ((h - (radius * 2)) / 2) + radius
+                                else
+                                    y = hTotal + try guiElementY.i32()? else 0 end
+                                end
+                            end
+                            
+                            let antiAliased: Bool = try
+                                if guiElement.properties("anti-aliased")? == "1" then true else false end
+                            else
+                                true // default to true
+                            end
+                            
+                            let border: Bool = try
+                                if guiElement.properties("border")? == "1" then true else false end
+                            else
+                                true // default to true
+                            end
+                            
+                            var borderColor: U32 = 0
+                            
+                            if border and guiElement.properties.contains("border-color") then
+                                // convert to a hexadecimal string
+                                var borderColorAsString = "0x" + try guiElement.properties("border-color")? else "" end
+                                
+                                // default to 0 for any missing RGB values
+                                while borderColorAsString.size() < 10 do
+                                    borderColorAsString = borderColorAsString + 
+                                        if borderColorAsString.size() < 8 then "0" else "F" end
+                                end
+                                
+                                // convert to a unsigned integer
+                                borderColor = try borderColorAsString.u32()? else 0 end
+                            end
+                            
+                            if guiElement.properties.contains("fill") then
+                                // convert to a hexadecimal string
+                                var fillAsString = "0x" + try guiElement.properties("fill")? else "" end
+                                
+                                // default to 0 for any missing RGB values
+                                while fillAsString.size() < 10 do
+                                    fillAsString = fillAsString + 
+                                        if fillAsString.size() < 8 then "0" else "F" end
+                                end
+                                
+                                // convert to a unsigned integer
+                                let fill = try fillAsString.u32()? else 0 end
+                                
+                                if antiAliased and not guiElement.properties.contains("border-color") then
+                                    borderColor = fill
+                                end
+                                
+                                callbacks.push(
+                                    gfx.FilledCircleColor~apply(renderer, x.i16(), y.i16(), radius.i16(), fill)
+                                )
+                            end
+                            
+                            if antiAliased then
+                                callbacks.push(
+                                    gfx.AACircleColor~apply(renderer, x.i16(), y.i16(), radius.i16(), borderColor)
+                                )
+                            else
+                                callbacks.push(
+                                    gfx.CircleColor~apply(renderer, x.i16(), y.i16(), radius.i16(), borderColor)
+                                )
+                            end
+                        end
                     | "load" =>
                         let src = guiElement.properties("src")?
                         
@@ -126,11 +219,12 @@ class App
                         let fontSize = guiElement.properties("font-size")?.i32()?
                         
                         // convert to a hexadecimal string
-                        var fontColorAsString = "0x" + guiElement.properties("font-color")?
+                        var fontColorAsString = "0x" + try guiElement.properties("font-color")? else "" end
                         
-                        // default to 0 for any missing RGBA values
+                        // default to 0 for any missing RGB values
                         while fontColorAsString.size() < 10 do
-                            fontColorAsString = fontColorAsString + "0"
+                            fontColorAsString = fontColorAsString + 
+                                if fontColorAsString.size() < 8 then "0" else "F" end
                         end
                         
                         // convert to a unsigned integer
@@ -157,8 +251,18 @@ class App
                         ttf.CloseFont(font)
                     end
                     
-                    let rect = _getRect(texture, guiElement, w, h, wTotal, hTotal)?
-                    elements.push(RenderElement(texture, rect))
+                    let re = RenderElement
+                    
+                    if callbacks.size() > 0 then
+                        re.callbacks = callbacks
+                    end
+                    
+                    if not texture.is_null() then
+                        re.texture = texture
+                        re.rect = _getRect(texture, guiElement, w, h, wTotal, hTotal)?
+                    end
+                    
+                    elements.push(re)
                 end
                 
                 wTotal = wTotal + w
@@ -184,15 +288,20 @@ class App
             // remove all drawn items
             sdl.RenderClear(renderer)
             
-            // draw our circle (with an anti-aliased edge)
-            gfx.FilledCircleRGBA(renderer, 400, 300, 200, 0x47, 0x58, 0xAE, 0xFF)
-            gfx.AACircleRGBA(renderer, 400, 300, 200, 0x47, 0x58, 0xAE, 0xFF)
-            
             let re = elements.values()
             
             while re.has_next() do
                 let element = re.next()?
-                sdl.RenderCopy(renderer, element.texture, Pointer[sdl.Rect], MaybePointer[sdl.Rect](element.rect))
+                
+                if not element.texture.is_null() then
+                    sdl.RenderCopy(renderer, element.texture, Pointer[sdl.Rect], MaybePointer[sdl.Rect](element.rect))
+                end
+                
+                let cb = element.callbacks.values()
+                
+                while cb.has_next() do
+                    cb.next()?()
+                end
             end
             
             // display everything

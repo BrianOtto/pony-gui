@@ -6,8 +6,10 @@ style id "txt-header"
     y "center"
 
 style id "drw-circle"
-    fill "4758AEFF"
+    fill "4758AE"
+    border-color "4758AE"
     anti-aliased "1"
+    radius "200"
     x "center"
     y "center"
 

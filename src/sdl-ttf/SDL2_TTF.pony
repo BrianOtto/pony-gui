@@ -9,35 +9,35 @@ primitive Font
 // Functions
 
 primitive CloseFont
-    fun @apply(font: Pointer[Font]): None =>
+    fun apply(font: Pointer[Font]): None =>
         @TTF_CloseFont[None](font)
 
 primitive GetError
-    fun @apply(): Pointer[U8] =>
+    fun apply(): Pointer[U8] =>
         sdl.GetError()
 
 primitive Init
-    fun @apply(): U32 =>
+    fun apply(): U32 =>
         @TTF_Init[U32]()
 
 primitive OpenFont
-    fun @apply(file: String, ptsize: I32): Pointer[Font] =>
+    fun apply(file: String, ptsize: I32): Pointer[Font] =>
         @TTF_OpenFont[Pointer[Font]](file.cstring(), ptsize)
 
 primitive RenderUTF8Blended
-    fun @apply(font: Pointer[Font], text: String, fg: U32 /* fg: sdl.Color */): Pointer[sdl.Surface] =>
+    fun apply(font: Pointer[Font], text: String, fg: U32 /* fg: sdl.Color */): Pointer[sdl.Surface] =>
         @TTF_RenderUTF8_Blended[Pointer[sdl.Surface]](font, text.cstring(), ConvertColor(fg))
 
 primitive RenderUTF8Shaded
-    fun @apply(font: Pointer[Font], text: String, fg: U32 /* fg: sdl.Color */): Pointer[sdl.Surface] =>
+    fun apply(font: Pointer[Font], text: String, fg: U32 /* fg: sdl.Color */): Pointer[sdl.Surface] =>
         @TTF_RenderUTF8_Shaded[Pointer[sdl.Surface]](font, text.cstring(), ConvertColor(fg))
 
 primitive RenderUTF8Solid
-    fun @apply(font: Pointer[Font], text: String, fg: U32 /* fg: sdl.Color */): Pointer[sdl.Surface] =>
+    fun apply(font: Pointer[Font], text: String, fg: U32 /* fg: sdl.Color */): Pointer[sdl.Surface] =>
         @TTF_RenderUTF8_Solid[Pointer[sdl.Surface]](font, text.cstring(), ConvertColor(fg))
 
 primitive Quit
-    fun @apply(): None =>
+    fun apply(): None =>
         @TTF_Quit[None]()
 
 // Custom (for Pony or platform specific issues)

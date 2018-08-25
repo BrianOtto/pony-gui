@@ -19,17 +19,17 @@ primitive INITWEBP
 // Functions
 
 primitive GetError
-    fun @apply(): Pointer[U8] =>
+    fun apply(): Pointer[U8] =>
         sdl.GetError()
 
 primitive Init
-    fun @apply(flags: I32): I32 =>
+    fun apply(flags: I32): I32 =>
         @IMG_Init[I32](flags)
 
 primitive Load
-    fun @apply(file: String): Pointer[sdl.Surface] =>
+    fun apply(file: String): Pointer[sdl.Surface] =>
         @IMG_Load[Pointer[sdl.Surface]](file.cstring())
 
 primitive Quit
-    fun @apply(): None =>
+    fun apply(): None =>
         @IMG_Quit[None]()

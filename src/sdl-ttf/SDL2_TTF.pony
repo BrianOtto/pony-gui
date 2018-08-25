@@ -26,40 +26,30 @@ primitive OpenFont
 
 primitive RenderUTF8Blended
     fun @apply(font: Pointer[Font], text: String, fg: U32 /* fg: sdl.Color */): Pointer[sdl.Surface] =>
-        var fgLE: U32 = fg
-        
-        ifdef windows then
-            // convert to little endian
-            fgLE = (((fg << 24) and 0xFF000000) or ((fg << 8) and 0x00FF0000) or
-                    ((fg >> 8) and 0x0000FF00) or ((fg >> 24) and 0x000000FF))
-        end
-        
-        @TTF_RenderUTF8_Blended[Pointer[sdl.Surface]](font, text.cstring(), fgLE)
+        @TTF_RenderUTF8_Blended[Pointer[sdl.Surface]](font, text.cstring(), ConvertColor(fg))
 
 primitive RenderUTF8Shaded
     fun @apply(font: Pointer[Font], text: String, fg: U32 /* fg: sdl.Color */): Pointer[sdl.Surface] =>
-        var fgLE: U32 = fg
-        
-        ifdef windows then
-            // convert to little endian
-            fgLE = (((fg << 24) and 0xFF000000) or ((fg << 8) and 0x00FF0000) or
-                    ((fg >> 8) and 0x0000FF00) or ((fg >> 24) and 0x000000FF))
-        end
-        
-        @TTF_RenderUTF8_Shaded[Pointer[sdl.Surface]](font, text.cstring(), fgLE)
+        @TTF_RenderUTF8_Shaded[Pointer[sdl.Surface]](font, text.cstring(), ConvertColor(fg))
 
 primitive RenderUTF8Solid
     fun @apply(font: Pointer[Font], text: String, fg: U32 /* fg: sdl.Color */): Pointer[sdl.Surface] =>
-        var fgLE: U32 = fg
-        
-        ifdef windows then
-            // convert to little endian
-            fgLE = (((fg << 24) and 0xFF000000) or ((fg << 8) and 0x00FF0000) or
-                    ((fg >> 8) and 0x0000FF00) or ((fg >> 24) and 0x000000FF))
-        end
-        
-        @TTF_RenderUTF8_Solid[Pointer[sdl.Surface]](font, text.cstring(), fgLE)
+        @TTF_RenderUTF8_Solid[Pointer[sdl.Surface]](font, text.cstring(), ConvertColor(fg))
 
 primitive Quit
     fun @apply(): None =>
         @TTF_Quit[None]()
+
+// Custom (for Pony or platform specific issues)
+
+primitive ConvertColor
+    fun apply(color: U32): U32 =>
+        var colorLE: U32 = color
+        
+        ifdef windows then
+            // convert to little endian
+            colorLE = (((color << 24) and 0xFF000000) or ((color << 8) and 0x00FF0000) or 
+                       ((color >> 8) and 0x0000FF00) or ((color >> 24) and 0x000000FF))
+        end
+        
+        colorLE

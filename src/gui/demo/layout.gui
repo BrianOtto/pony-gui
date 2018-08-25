@@ -1,3 +1,5 @@
+app height "720" width "1280" title "Pony GUI"
+
 row height "1/6"
     text value "Pony GUI" id "txt-header"
 

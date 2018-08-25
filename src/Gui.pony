@@ -19,7 +19,7 @@ class Gui
         let file = OpenFile(filePath) as File
         
         var lineCount: I32 = 0
-        let lineRegex = Regex("^((row|col|draw|text|load|style|event) .*)|(--.*)|($)")?
+        let lineRegex = Regex("^((app|row|col|draw|text|load|style|event) .*)|(--.*)|($)")?
         
         var rowCounter: USize = 0
         var colCounter: USize = 0
@@ -80,6 +80,25 @@ class Gui
                 let gp = guiProperties.values()
                 
                 match guiProperties(0)?
+                | "app" =>
+                    gp.next()?
+                    
+                    while gp.has_next() do
+                        let key = gp.next()?
+                        
+                        if gp.has_next() then
+                            let value: String val = gp.next()?.clone().>strip("\"").>replace(placeholder, " ")
+                            
+                            match key
+                            | "title" =>
+                                app.windowTitle = value
+                            | "width" =>
+                                app.windowW = try value.i32()? else error end
+                            | "height" =>
+                                app.windowH = try value.i32()? else error end
+                            end
+                        end
+                    end
                 | "row" =>
                     gp.next()?
                     

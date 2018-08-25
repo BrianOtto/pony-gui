@@ -8,15 +8,18 @@ use ttf = "sdl-ttf"
 class App
     var out: Env
     
-    var gui: Array[GuiRow] = Array[GuiRow]
-    
     var initSDL: U32 = 0
     var initIMG: I32 = 0
     var initTTF: U32 = 0
     
     var window: Pointer[sdl.Window] = Pointer[sdl.Window]
+    var windowTitle: String = ""
+    var windowW: I32 = 1280
+    var windowH: I32 = 720
+    
     var renderer: Pointer[sdl.Renderer] = Pointer[sdl.Renderer]
     
+    var gui: Array[GuiRow] = Array[GuiRow]
     var elements: Array[RenderElement] = Array[RenderElement]
     
     new create(env: Env) =>
@@ -38,11 +41,8 @@ class App
         
         // create our window
         
-        let windowW: I32 = 800
-        let windowH: I32 = 600
-        
         let wFlags = sdl.WINDOWSHOWN() // or sdl.WINDOWRESIZABLE()
-        window = sdl.CreateWindow("Pony GUI", 100, 100, windowW, windowH, wFlags)
+        window = sdl.CreateWindow(windowTitle, 100, 100, windowW, windowH, wFlags)
         Debug.out("window = " + window.usize().string())
         
         if window.is_null() then

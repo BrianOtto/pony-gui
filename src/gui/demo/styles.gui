@@ -1,7 +1,7 @@
 style id "txt-header"
     font "OpenSans-Regular.ttf"
     font-color "030307"
-    font-size "32"
+    font-size "34"
     x "center"
     y "center"
 
@@ -9,7 +9,7 @@ style id "drw-circle"
     fill "4758AE"
     border-color "4758AE"
     anti-aliased "1"
-    radius "200"
+    radius "250"
     x "center"
     y "center"
 

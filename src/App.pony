@@ -273,12 +273,28 @@ class App
         
         // event polling
         
-        var event: sdl.Event ref = sdl.Event
-        
-        while true do
-            if sdl.PollEvent(MaybePointer[sdl.Event](event)) > 0 then
-                match event.eventType
-                | sdl.EVENTQUIT() => break
+        var poll = true
+        while poll do
+            var more: I32 = 1
+            while more > 0 do
+                sdl.PumpEvents()
+                
+                var peek: sdl.CommonEvent ref = sdl.CommonEvent
+                sdl.PeekEvent(MaybePointer[sdl.CommonEvent](peek))
+                
+                match peek.eventType
+                | sdl.EVENTMOUSEMOTION() =>
+                    var event: sdl.MouseMotionEvent ref = sdl.MouseMotionEvent
+                    more = sdl.PollMouseMotionEvent(MaybePointer[sdl.MouseMotionEvent](event))
+                    
+                    Debug.out("x = " + event.x.string())
+                    Debug.out("y = " + event.y.string())
+                | sdl.EVENTQUIT() =>
+                    more = 0
+                    poll = false
+                else
+                    var event: sdl.CommonEvent ref = sdl.CommonEvent
+                    more = sdl.PollCommonEvent(MaybePointer[sdl.CommonEvent](event))
                 end
             end
             

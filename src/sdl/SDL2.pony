@@ -2,8 +2,43 @@ use "lib:sdl/SDL2" if windows
 
 // Flags - Event
 
+primitive EVENTFIRSTEVENT
+    fun apply(): U32 => 0x000
+
+primitive EVENTKEYDOWN
+    fun apply(): U32 => 0x300
+
+primitive EVENTKEYUP
+    fun apply(): U32 => 0x301
+
+primitive EVENTLASTEVENT
+    fun apply(): U32 => 0xFFFF
+
+primitive EVENTMOUSEBUTTONDOWN
+    fun apply(): U32 => 0x401
+
+primitive EVENTMOUSEBUTTONUP
+    fun apply(): U32 => 0x402
+
+primitive EVENTMOUSEMOTION
+    fun apply(): U32 => 0x400
+
+primitive EVENTMOUSEWHEEL
+    fun apply(): U32 => 0x403
+
 primitive EVENTQUIT
     fun apply(): U32 => 0x100
+
+// Flags - Event Action
+
+primitive EVENTACTIONADDEVENT
+    fun apply(): I32 => 0
+
+primitive EVENTACTIONGETEVENT
+    fun apply(): I32 => 2
+
+primitive EVENTACTIONPEEKEVENT
+    fun apply(): I32 => 1
 
 // Flags - Init
 
@@ -91,13 +126,37 @@ struct Color
     
     new create() => None
 
-struct Event
+struct CommonEvent
+    var eventType: U32 = 0
+    var timestamp: U32 = 0
+    
+    new create() => None
+
+struct KeyboardEvent
+    // TODO
+    
+    new create() => None
+
+struct MouseButtonEvent
+    // TODO
+    
+    new create() => None
+
+struct MouseMotionEvent
     var eventType: U32 = 0
     var timestamp: U32 = 0
     var windowID: U32 = 0
-    var event: U8 = 0
-    var data1: I32 = 0
-    var data2: I32 = 0
+    var which: U32 = 0
+    var state: U32 = 0
+    var x: I32 = 0
+    var y: I32 = 0
+    var xrel: I32 = 0
+    var yrel: I32 = 0
+    
+    new create() => None
+
+struct MouseWheelEvent
+    // TODO
     
     new create() => None
 
@@ -106,6 +165,21 @@ struct Rect
     var y: I32 = 0
     var w: I32 = 0
     var h: I32 = 0
+    
+    new create() => None
+
+struct TextEditingEvent
+    // TODO
+    
+    new create() => None
+
+struct TextInputEvent
+    // TODO
+    
+    new create() => None
+
+struct WindowEvent
+    // TODO
     
     new create() => None
 
@@ -154,9 +228,9 @@ primitive Init
     fun apply(flags: U32): U32 =>
         @SDL_Init[U32](flags)
 
-primitive PollEvent
-    fun apply(event: MaybePointer[Event]): I32 =>
-        @SDL_PollEvent[I32](event)
+primitive PumpEvents
+    fun apply(): None =>
+        @SDL_PumpEvents[None]()
 
 primitive QueryTexture
     fun apply(texture: Pointer[Texture], format: Pointer[U32], access: Pointer[I32], rect: Rect): U32 =>
@@ -182,3 +256,17 @@ primitive SetRenderDrawColor
 primitive Quit
     fun apply(): None =>
         @SDL_Quit[None]()
+
+// Custom (for Pony or platform specific issues)
+
+primitive PeekEvent
+    fun apply(event: MaybePointer[CommonEvent]): I32 =>
+        @SDL_PeepEvents[I32](event, I32(1), EVENTACTIONPEEKEVENT(), EVENTFIRSTEVENT(), EVENTLASTEVENT())
+
+primitive PollCommonEvent
+    fun apply(event: MaybePointer[CommonEvent]): I32 =>
+        @SDL_PollEvent[I32](event)
+
+primitive PollMouseMotionEvent
+    fun apply(event: MaybePointer[MouseMotionEvent]): I32 =>
+        @SDL_PollEvent[I32](event)

@@ -1,0 +1,12 @@
+event id "img-logo" type "over"
+    run "logo-over" when clicked "0"
+    run "logo-clicked-over" when clicked "1"
+
+event id "img-logo" type "out"
+    run style when clicked "0"
+    run "logo-clicked" when clicked "1"
+
+event id "img-logo" type "click"
+    run "logo-clicked" when clicked "0"
+    run style when clicked "1"
+    set clicked "1" when clicked "0" else clicked "1"

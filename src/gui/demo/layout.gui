@@ -8,4 +8,4 @@ row height "4/6"
     load media "image" id "img-logo"
 
 style import "styles.gui"
--- event import "events.gui"
+event import "events.gui"

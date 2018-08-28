@@ -1,3 +1,4 @@
+use "collections"
 use "debug"
 
 use sdl = "sdl"
@@ -21,6 +22,7 @@ class App
     
     var gui: Array[GuiRow] = Array[GuiRow]
     var elements: Array[RenderElement] = Array[RenderElement]
+    var events: Map[String, Array[GuiEvent]] = Map[String, Array[GuiEvent]]
     
     new create(env: Env) =>
         out = env

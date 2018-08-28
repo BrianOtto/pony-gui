@@ -185,12 +185,15 @@ class Gui
                     end
                     
                     try app.gui(rowCounter - 1)?.cols(colCounter - 1)?.elements.push(guiElement) end
-                | "style" | "event" =>
+                | "style" =>
                     gp.next()?
                     
+                    var import = false
                     var guiElement = GuiElement
+                    var styleEvent = Map[String, String]
+                    var eventValue = ""
                     
-                    if gp.has_next() then
+                    while gp.has_next() do
                         let key = gp.next()?
                         
                         if gp.has_next() then
@@ -199,12 +202,22 @@ class Gui
                             match key
                             | "import" =>
                                 load(value)?
-                            | "id" =>
-                                for row in app.gui.values() do
-                                    for col in row.cols.values() do
-                                        for element in col.elements.values() do
-                                            if element.id == value then
-                                                guiElement = element
+                                import = true
+                                break
+                            | "id" | "event" =>
+                                if key == "event" then
+                                    eventValue = value
+                                else
+                                    for row in app.gui.values() do
+                                        for col in row.cols.values() do
+                                            for element in col.elements.values() do
+                                                if element.id == value then
+                                                    guiElement = element
+                                                    break
+                                                end
+                                            end
+                                            
+                                            if guiElement.id != "" then
                                                 break
                                             end
                                         end
@@ -213,17 +226,13 @@ class Gui
                                             break
                                         end
                                     end
-                                    
-                                    if guiElement.id != "" then
-                                        break
-                                    end
                                 end
                             end
                         end
                     end
                     
-                    if guiElement.id == "" then
-                        continue
+                    if import then continue elseif guiElement.id == "" then
+                        app.logAndExit("The style command has a missing or invalid \"id\" property.", false)?
                     end
                     
                     while lines.has_next() do
@@ -244,31 +253,116 @@ class Gui
                         else
                             try
                                 let propValue: String val = prop(1)?.clone().>strip("\"").>replace(placeholder, " ")
-                                guiElement.properties.insert(propKey, propValue)?
-                            end
-                        end
-                    end
-                    
-                    while required.has_next() do
-                        (var rCommand, var rProperties) = required.next()?
-                        
-                        if guiElement.command == rCommand then
-                            let rp = rProperties.values()
-                            
-                            while rp.has_next() do
-                                let rProperty = rp.next()?
                                 
-                                if not guiElement.properties.contains(rProperty) then
-                                    lineCount = lineCount - 1
-                                    
-                                    app.logAndExit("The \"" + rCommand + "\" command is missing a \"" + 
-                                                    rProperty + "\" property.", false)?
+                                if eventValue != "" then
+                                    styleEvent.insert(propKey, propValue)?
+                                else
+                                    guiElement.properties.insert(propKey, propValue)?
                                 end
                             end
                         end
                     end
                     
-                    try app.gui(rowCounter - 1)?.cols(colCounter - 1)?.elements.push(guiElement) end
+                    if eventValue != "" then
+                        guiElement.events.insert(eventValue, styleEvent)?
+                    else
+                        while required.has_next() do
+                            (var rCommand, var rProperties) = required.next()?
+                            
+                            if guiElement.command == rCommand then
+                                let rp = rProperties.values()
+                                
+                                while rp.has_next() do
+                                    let rProperty = rp.next()?
+                                    
+                                    if not guiElement.properties.contains(rProperty) then
+                                        lineCount = lineCount - 1
+                                        
+                                        app.logAndExit("The \"" + rCommand + "\" command is missing a \"" + 
+                                                        rProperty + "\" property.", false)?
+                                    end
+                                end
+                            end
+                        end
+                    end
+                | "event" =>
+                    gp.next()?
+                    
+                    var import = false
+                    var guiEvent = GuiEvent
+                    
+                    while gp.has_next() do
+                        let key = gp.next()?
+                        
+                        if gp.has_next() then
+                            let value: String val = gp.next()?.clone().>strip("\"").>replace(placeholder, " ")
+                            
+                            match key
+                            | "import" =>
+                                load(value)?
+                                import = true
+                                break
+                            | "id" =>
+                                for row in app.gui.values() do
+                                    for col in row.cols.values() do
+                                        for element in col.elements.values() do
+                                            if element.id == value then
+                                                guiEvent.id = element.id
+                                                break
+                                            end
+                                        end
+                                        
+                                        if guiEvent.id != "" then
+                                            break
+                                        end
+                                    end
+                                    
+                                    if guiEvent.id != "" then
+                                        break
+                                    end
+                                end
+                            | "type" =>
+                                guiEvent.eventType = value
+                            end
+                        end
+                    end
+                    
+                    if import then continue elseif guiEvent.id == "" then
+                        app.logAndExit("The event command has a missing or invalid \"id\" property.", false)?
+                    end
+                    
+                    if guiEvent.eventType == "" then
+                        app.logAndExit("The event command has a missing \"type\" property.", false)?
+                    end
+                    
+                    while lines.has_next() do
+                        line = lines.next().clone().>strip()
+                        
+                        lineCount = lineCount + 1
+                        
+                        if line.size() == 0 then
+                            continue
+                        end
+                        
+                        let comm: Array[String] = line.split_by(" ")
+                        let commKey = comm(0)?
+                        
+                        if (commKey == "style") or (commKey == "event") then
+                            prev = line
+                            break
+                        else
+                            // try
+                                // let commValue: String val = comm(1)?.clone().>strip("\"").>replace(placeholder, " ")
+                                guiEvent.commands.push(line)
+                            // end
+                        end
+                    end
+                    
+                    if app.events.contains(guiEvent.eventType) then
+                        app.events(guiEvent.eventType)?.push(guiEvent)
+                    else
+                        app.events.insert(guiEvent.eventType, [guiEvent])?
+                    end
                 end
             else
                 app.logAndExit("The \"" + fileName + "\" file has invalid syntax on line " + 
@@ -312,17 +406,31 @@ class Gui
                         while lelements.has_next() do
                             let myElement = lelements.next()?
                             
-                            Debug.out("-----------------")
+                            Debug.out("------------------")
                             Debug.out("id = " + myElement.id)
                             Debug.out("command = " + myElement.command)
                             
                             let lprops = myElement.properties.pairs()
                             
-                            if lprops.has_next() then
-                                while lprops.has_next() do
-                                    let myProp = lprops.next()?
+                            while lprops.has_next() do
+                                let myProp = lprops.next()?
+                                
+                                Debug.out(myProp._1 + " = " + myProp._2)
+                            end
+                            
+                            let lge = myElement.events.pairs()
+                            
+                            while lge.has_next() do
+                                let myGuiEvent = lge.next()?
+                                
+                                Debug.out("\nevent id = " + myGuiEvent._1)
+                                
+                                let geprops = myGuiEvent._2.pairs()
+                    
+                                while geprops.has_next() do
+                                    let myGuiEventProp = geprops.next()?
                                     
-                                    Debug.out(myProp._1 + " = " + myProp._2)
+                                    Debug.out(myGuiEventProp._1 + " = " + myGuiEventProp._2)
                                 end
                             end
                             
@@ -330,6 +438,33 @@ class Gui
                                 Debug.out("")
                             end
                         end
+                    end
+                end
+            end
+        end
+        
+        let lae = app.events.pairs()
+            
+        if lae.has_next() then
+            while lae.has_next() do
+                let myEventType = lae.next()?
+                
+                Debug.out("\nEvents - " + myEventType._1)
+                
+                let myEvents = myEventType._2.values()
+                
+                while myEvents.has_next() do
+                    let myEvent = myEvents.next()?
+                    
+                    Debug.out("-----------------")
+                    Debug.out("id = " + myEvent.id)
+                    
+                    Debug.out("")
+                    
+                    let lcommands = myEvent.commands.values()
+                    
+                    while lcommands.has_next() do
+                        Debug.out(lcommands.next()?)
                     end
                 end
             end

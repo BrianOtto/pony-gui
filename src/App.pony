@@ -202,19 +202,20 @@ class App
                             end
                         end
                     | "load" =>
-                        let src = guiElement.properties("src")?
-                        
                         match guiElement.properties("media")?
                         | "image" =>
-                            // load our image
-                            let image = img.Load(src)
+                            let re = _renderImage(guiElement, guiElement, w, h, wTotal, hTotal)?
                             
-                            if image.is_null() then
-                                logAndExit("load image error")?
+                            let styleEvents = guiElement.events.values()
+                            
+                            while styleEvents.has_next() do
+                                var styleEvent = styleEvents.next()?
+                                var reForStyle = _renderImage(guiElement, styleEvent, w, h, wTotal, hTotal)?
+                                
+                                re.events.insert(styleEvent.id, reForStyle)?
                             end
                             
-                            texture = sdl.CreateTextureFromSurface(renderer, image)
-                            sdl.FreeSurface(image)
+                            elements.push(re)
                         end
                     | "text" =>
                         let fontName = guiElement.properties("font")?
@@ -253,18 +254,23 @@ class App
                         ttf.CloseFont(font)
                     end
                     
-                    let re = RenderElement
-                    
-                    if callbacks.size() > 0 then
-                        re.callbacks = callbacks
+                    // TODO: refactor all the commands to work like "load"
+                    //       and then remove this condition
+                    if guiElement.command != "load" then
+                        let re = RenderElement
+                        re.id = guiElement.id
+                        
+                        if callbacks.size() > 0 then
+                            re.callbacks = callbacks
+                        end
+                        
+                        if not texture.is_null() then
+                            re.texture = texture
+                            re.rect = _getRect(texture, guiElement, w, h, wTotal, hTotal)?
+                        end
+                        
+                        elements.push(re)
                     end
-                    
-                    if not texture.is_null() then
-                        re.texture = texture
-                        re.rect = _getRect(texture, guiElement, w, h, wTotal, hTotal)?
-                    end
-                    
-                    elements.push(re)
                 end
                 
                 wTotal = wTotal + w
@@ -291,6 +297,39 @@ class App
                     
                     Debug.out("x = " + event.x.string())
                     Debug.out("y = " + event.y.string())
+                    
+                    if events.contains("over") then
+                        let guiEvents = events("over")?.values()
+                        let renderElements = elements.values()
+                        
+                        while guiEvents.has_next() do
+                            var ge = guiEvents.next()?
+                            
+                            while renderElements.has_next() do
+                                var re = renderElements.next()?
+                                
+                                if ge.id == re.id then
+                                    if (event.x >= re.rect.x) and
+                                       (event.x <= (re.rect.x + re.rect.w)) and
+                                       (event.y >= re.rect.y) and
+                                       (event.y <= (re.rect.y + re.rect.h)) then
+                                        
+                                        let commands = ge.commands.values()
+                                        
+                                        while commands.has_next() do
+                                            var command = commands.next()?
+                                            
+                                            // TODO: check the when condition and remove the break
+                                            //       also verify state is maintained when more then
+                                            //       one style event is used
+                                            re.texture = re.events(command.eventId)?.texture
+                                            break
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
                 | sdl.EVENTQUIT() =>
                     more = 0
                     poll = false
@@ -360,6 +399,33 @@ class App
         out.exitcode(1)
         
         error
+    
+    fun ref _renderImage(geOld: GuiElement, geNew: GuiElement, w: I32, h: I32, wTotal: I32, hTotal: I32): RenderElement ? =>
+        let ge = geOld
+        
+        let geProps = geNew.properties.pairs()
+        
+        while geProps.has_next() do
+            var geProp = geProps.next()?
+            ge.properties.update(geProp._1, geProp._2)
+        end
+        
+        let image = img.Load(ge.properties("src")?)
+        
+        if image.is_null() then
+            logAndExit("load image error")?
+        end
+        
+        let texture = sdl.CreateTextureFromSurface(renderer, image)
+        sdl.FreeSurface(image)
+        
+        let re = RenderElement
+        
+        re.id = ge.id
+        re.texture = texture
+        re.rect = _getRect(texture, ge, w, h, wTotal, hTotal)?
+        
+        re
     
     fun ref _getRect(texture: Pointer[sdl.Texture], guiElement: GuiElement, 
                      w: I32, h: I32, wTotal: I32, hTotal: I32): sdl.Rect ? =>

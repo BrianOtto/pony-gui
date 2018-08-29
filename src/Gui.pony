@@ -190,8 +190,7 @@ class Gui
                     
                     var import = false
                     var guiElement = GuiElement
-                    var styleEvent = Map[String, String]
-                    var eventValue = ""
+                    var styleEvent = GuiElement
                     
                     while gp.has_next() do
                         let key = gp.next()?
@@ -206,7 +205,7 @@ class Gui
                                 break
                             | "id" | "event" =>
                                 if key == "event" then
-                                    eventValue = value
+                                    styleEvent.id = value
                                 else
                                     for row in app.gui.values() do
                                         for col in row.cols.values() do
@@ -254,8 +253,8 @@ class Gui
                             try
                                 let propValue: String val = prop(1)?.clone().>strip("\"").>replace(placeholder, " ")
                                 
-                                if eventValue != "" then
-                                    styleEvent.insert(propKey, propValue)?
+                                if styleEvent.id != "" then
+                                    styleEvent.properties.insert(propKey, propValue)?
                                 else
                                     guiElement.properties.insert(propKey, propValue)?
                                 end
@@ -263,8 +262,8 @@ class Gui
                         end
                     end
                     
-                    if eventValue != "" then
-                        guiElement.events.insert(eventValue, styleEvent)?
+                    if styleEvent.id != "" then
+                        guiElement.events.push(styleEvent)
                     else
                         while required.has_next() do
                             (var rCommand, var rProperties) = required.next()?
@@ -351,10 +350,15 @@ class Gui
                             prev = line
                             break
                         else
-                            // try
-                                // let commValue: String val = comm(1)?.clone().>strip("\"").>replace(placeholder, " ")
-                                guiEvent.commands.push(line)
-                            // end
+                            try
+                                let commValue: String val = comm(1)?.clone().>strip("\"").>replace(placeholder, " ")
+                                
+                                let command: GuiEventCommand ref = GuiEventCommand
+                                command.command = commKey
+                                command.eventId = commValue
+                                
+                                guiEvent.commands.push(command)
+                            end
                         end
                     end
                     
@@ -418,14 +422,14 @@ class Gui
                                 Debug.out(myProp._1 + " = " + myProp._2)
                             end
                             
-                            let lge = myElement.events.pairs()
+                            let lge = myElement.events.values()
                             
                             while lge.has_next() do
                                 let myGuiEvent = lge.next()?
                                 
-                                Debug.out("\nevent id = " + myGuiEvent._1)
+                                Debug.out("\nevent id = " + myGuiEvent.id)
                                 
-                                let geprops = myGuiEvent._2.pairs()
+                                let geprops = myGuiEvent.properties.pairs()
                     
                                 while geprops.has_next() do
                                     let myGuiEventProp = geprops.next()?
@@ -464,7 +468,8 @@ class Gui
                     let lcommands = myEvent.commands.values()
                     
                     while lcommands.has_next() do
-                        Debug.out(lcommands.next()?)
+                        let myCommand = lcommands.next()?
+                        Debug.out(myCommand.command + " " + myCommand.eventId)
                     end
                 end
             end

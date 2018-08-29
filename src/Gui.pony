@@ -351,11 +351,18 @@ class Gui
                             break
                         else
                             try
+                                // TODO: loop on the key/value pairs instead of hard-coding the numeric locations
+                                //       and add support for other commands like set / get / any / all
                                 let commValue: String val = comm(1)?.clone().>strip("\"").>replace(placeholder, " ")
+                                
+                                let whenKey: String val = comm(3)?
+                                let whenValue: String val = comm(4)?.clone().>strip("\"").>replace(placeholder, " ")
                                 
                                 let command: GuiEventCommand ref = GuiEventCommand
                                 command.command = commKey
                                 command.eventId = commValue
+                                command.whenVar = whenKey
+                                command.whenVal = whenValue
                                 
                                 guiEvent.commands.push(command)
                             end

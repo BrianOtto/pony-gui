@@ -319,11 +319,29 @@ class App
                                         while commands.has_next() do
                                             var command = commands.next()?
                                             
-                                            // TODO: check the when condition and remove the break
-                                            //       also verify state is maintained when more then
-                                            //       one style event is used
-                                            re.texture = re.events(command.eventId)?.texture
-                                            break
+                                            var reEvent = re.events(command.eventId)?
+                                            var when = false
+                                            
+                                            if not re.data.contains(command.whenVar) then
+                                                re.data.insert(command.whenVar, "0")?
+                                            end
+                                            
+                                            if re.data(command.whenVar)? == command.whenVal then
+                                                when = true
+                                            end
+                                            
+                                            if when and (reEvent.texture != re.texture) then
+                                                re.textureLast = re.texture
+                                                re.rectLast = re.rect
+                                                
+                                                re.texture = reEvent.texture
+                                                re.rect = reEvent.rect
+                                            end
+                                        end
+                                    else
+                                        if not re.textureLast.is_null() then
+                                            re.texture = re.textureLast
+                                            re.rect = re.rectLast
                                         end
                                     end
                                 end

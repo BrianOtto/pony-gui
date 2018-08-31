@@ -1,5 +1,22 @@
 use "lib:sdl/SDL2" if windows
 
+// Flags - Button
+
+primitive BUTTONLEFT
+    fun apply(): U8 => 1
+
+primitive BUTTONMIDDLE
+    fun apply(): U8 => 2
+
+primitive BUTTONRIGHT
+    fun apply(): U8 => 3
+
+primitive BUTTONX1
+    fun apply(): U8 => 4
+
+primitive BUTTONX2
+    fun apply(): U8 => 5
+
 // Flags - Event
 
 primitive EVENTFIRSTEVENT
@@ -84,6 +101,14 @@ primitive RENDERERSOFTWARE
 primitive RENDERERTARGETTEXTURE
     fun apply(): U32 => 0x00000008
 
+// Flags - State
+
+primitive STATEPRESSED
+    fun apply(): U8 => 1
+
+primitive STATERELEASED
+    fun apply(): U8 => 0
+
 // Flags - Window
 
 primitive WINDOWBORDERLESS
@@ -138,7 +163,16 @@ struct KeyboardEvent
     new create() => None
 
 struct MouseButtonEvent
-    // TODO
+    var eventType: U32 = 0
+    var timestamp: U32 = 0
+    var windowID: U32 = 0
+    var which: U32 = 0
+    var button: U8 = 0
+    var state: U8 = 0
+    var clicks: U8 = 0
+    var padding1: U8 = 0
+    var x: I32 = 0
+    var y: I32 = 0
     
     new create() => None
 
@@ -265,6 +299,10 @@ primitive PeekEvent
 
 primitive PollCommonEvent
     fun apply(event: MaybePointer[CommonEvent]): I32 =>
+        @SDL_PollEvent[I32](event)
+
+primitive PollMouseButtonEvent
+    fun apply(event: MaybePointer[MouseButtonEvent]): I32 =>
         @SDL_PollEvent[I32](event)
 
 primitive PollMouseMotionEvent

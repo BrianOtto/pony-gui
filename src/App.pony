@@ -2,12 +2,15 @@ use "collections"
 use "debug"
 
 use sdl = "sdl"
-use gfx = "sdl-gfx"
 use img = "sdl-image"
 use ttf = "sdl-ttf"
 
 class App
     var out: Env
+    
+    var gui: Array[GuiRow] = Array[GuiRow]
+    var elements: Array[RenderElement] = Array[RenderElement]
+    var events: Map[String, Array[GuiEvent]] = Map[String, Array[GuiEvent]]
     
     var initSDL: U32 = 0
     var initIMG: I32 = 0
@@ -20,18 +23,203 @@ class App
     
     var renderer: Pointer[sdl.Renderer] = Pointer[sdl.Renderer]
     
-    var gui: Array[GuiRow] = Array[GuiRow]
-    var elements: Array[RenderElement] = Array[RenderElement]
-    var events: Map[String, Array[GuiEvent]] = Map[String, Array[GuiEvent]]
-    
     new create(env: Env) =>
         out = env
     
     fun ref init()? =>
-        // load our GUI
-        
+        // load our gui and events
         Gui(this).load()?
         
+        // initialize our libraries
+        // and create our window and renderer
+        _initLibraries()?
+        
+        // render our elements 
+        // and their events
+        Render(this).load()?
+        
+        // event polling
+        var poll = true
+        
+        while poll do
+            var more: I32 = 1
+            
+            while more > 0 do
+                sdl.PumpEvents()
+                
+                var peek: sdl.CommonEvent ref = sdl.CommonEvent
+                sdl.PeekEvent(MaybePointer[sdl.CommonEvent](peek))
+                
+                match peek.eventType
+                | sdl.EVENTMOUSEMOTION() =>
+                    var event: sdl.MouseMotionEvent ref = sdl.MouseMotionEvent
+                    more = sdl.PollMouseMotionEvent(MaybePointer[sdl.MouseMotionEvent](event))
+                    
+                    Debug.out("x = " + event.x.string())
+                    Debug.out("y = " + event.y.string())
+                    
+                    if events.contains("over") then
+                        let guiEvents = events("over")?.values()
+                        let renderElements = elements.values()
+                        
+                        while guiEvents.has_next() do
+                            var ge = guiEvents.next()?
+                            
+                            while renderElements.has_next() do
+                                var re = renderElements.next()?
+                                
+                                if ge.id == re.id then
+                                    if (event.x >= re.rect.x) and
+                                       (event.x <= (re.rect.x + re.rect.w)) and
+                                       (event.y >= re.rect.y) and
+                                       (event.y <= (re.rect.y + re.rect.h)) then
+                                        
+                                        let commands = ge.commands.values()
+                                        
+                                        while commands.has_next() do
+                                            var command = commands.next()?
+                                            
+                                            var reEvent = try re.events(command.eventId)? else continue end
+                                            var when = false
+                                            
+                                            if not re.data.contains(command.whenVar) then
+                                                re.data.insert(command.whenVar, "0")?
+                                            end
+                                            
+                                            if re.data(command.whenVar)? == command.whenVal then
+                                                when = true
+                                            end
+                                            Debug(command.whenVar+"="+re.data(command.whenVar)?)
+                                            if when and (reEvent.texture != re.texture) then
+                                                re.textureLast = re.texture
+                                                re.rectLast = re.rect
+                                                
+                                                re.texture = reEvent.texture
+                                                re.rect = reEvent.rect
+                                            end
+                                        end
+                                    else
+                                        // over is always a temporary change in style
+                                        // TODO: add an out command instead and use it when it exists
+                                        if not re.textureLast.is_null() then
+                                            re.texture = re.textureLast
+                                            re.rect = re.rectLast
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                | sdl.EVENTMOUSEBUTTONUP() =>
+                    var event: sdl.MouseButtonEvent ref = sdl.MouseButtonEvent
+                    more = sdl.PollMouseButtonEvent(MaybePointer[sdl.MouseButtonEvent](event))
+                    
+                    Debug.out("clicks = " + event.clicks.string())
+                    
+                    if events.contains("click") then
+                        let guiEvents = events("click")?.values()
+                        let renderElements = elements.values()
+                        
+                        while guiEvents.has_next() do
+                            var ge = guiEvents.next()?
+                            
+                            while renderElements.has_next() do
+                                var re = renderElements.next()?
+                                
+                                if ge.id == re.id then
+                                    if (event.x >= re.rect.x) and
+                                       (event.x <= (re.rect.x + re.rect.w)) and
+                                       (event.y >= re.rect.y) and
+                                       (event.y <= (re.rect.y + re.rect.h)) then
+                                       
+                                        let commands = ge.commands.values()
+                                        
+                                        while commands.has_next() do
+                                            var command = commands.next()?
+                                            
+                                            var when = false
+                                            
+                                            if not re.data.contains(command.whenVar) then
+                                                re.data.insert(command.whenVar, "0")?
+                                            end
+                                            
+                                            if re.data(command.whenVar)? == command.whenVal then
+                                                when = true
+                                            end
+                                            
+                                            if command.command == "set" then
+                                                if when then
+                                                    if re.data.contains(command.dataVar) then
+                                                        re.data.update(command.dataVar, command.dataVal)
+                                                    else
+                                                        re.data.insert(command.dataVar, command.dataVal)?
+                                                    end
+                                                else
+                                                    if re.data.contains(command.elseVar) then
+                                                        re.data.update(command.elseVar, command.elseVal)
+                                                    else
+                                                        re.data.insert(command.elseVar, command.elseVal)?
+                                                    end
+                                                end
+                                            end
+                                            
+                                            if command.command == "run" then
+                                                var reEvent = RenderElement
+                                                reEvent = try re.events(command.eventId)? else continue end
+                                                
+                                                // click is always a permanent change in style
+                                                if when then
+                                                    re.textureLast = re.texture
+                                                    re.rectLast = re.rect
+                                                    
+                                                    re.texture = reEvent.texture
+                                                    re.rect = reEvent.rect
+                                                end
+                                            end
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                | sdl.EVENTQUIT() =>
+                    more = 0
+                    poll = false
+                else
+                    var event: sdl.CommonEvent ref = sdl.CommonEvent
+                    more = sdl.PollCommonEvent(MaybePointer[sdl.CommonEvent](event))
+                end
+            end
+            
+            // set our background color
+            sdl.SetRenderDrawColor(renderer, 0x31, 0x3D, 0x78, 0xFF)
+            
+            // remove all drawn items
+            sdl.RenderClear(renderer)
+            
+            let re = elements.values()
+            
+            while re.has_next() do
+                let element = re.next()?
+                
+                if not element.texture.is_null() then
+                    sdl.RenderCopy(renderer, element.texture, Pointer[sdl.Rect], MaybePointer[sdl.Rect](element.rect))
+                end
+                
+                let cb = element.callbacks.values()
+                
+                while cb.has_next() do
+                    cb.next()?()
+                end
+            end
+            
+            // display everything
+            sdl.RenderPresent(renderer)
+        end
+        
+        logAndExit()?
+    
+    fun ref _initLibraries()? =>
         // initialize SDL
         
         initSDL = sdl.Init(sdl.INITVIDEO())
@@ -83,307 +271,6 @@ class App
         if initTTF != 0 then
             logAndExit("init ttf error")?
         end
-        
-        var hTotal: I32 = 0
-        var wTotal: I32 = 0
-        
-        let guiRows = gui.values()
-        
-        while guiRows.has_next() do
-            let guiRow = guiRows.next()?
-            let guiCols = guiRow.cols.values()
-            
-            let h: I32 = (windowH.f32() * guiRow.height).i32()
-            
-            wTotal = 0
-            
-            while guiCols.has_next() do
-                let guiCol = guiCols.next()?
-                let guiElements = guiCol.elements.values()
-                
-                let w: I32 = (windowW.f32() * guiCol.width).i32()
-                
-                while guiElements.has_next() do
-                    let guiElement = guiElements.next()?
-                    
-                    var callbacks: Array[{ref (): Any val}] = []
-                    var texture = Pointer[sdl.Texture]
-                    
-                    match guiElement.command
-                    | "draw" =>
-                        match guiElement.properties("shape")?
-                        | "circle" =>
-                            var x: I32 = 0
-                            var y: I32 = 0
-                            
-                            // TODO: allow radius to be specified as a percentage of w / h (e.g "1/3")
-                            var radius: I32 = try guiElement.properties("radius")?.i32()? else 0 end
-                            radius = if radius > w then w else radius end
-                            radius = if radius > h then h else radius end
-                            
-                            if guiElement.properties.contains("x") then
-                                let guiElementX = guiElement.properties("x")?
-                                
-                                if guiElementX == "center" then
-                                    x = wTotal + ((w - (radius * 2)) / 2) + radius
-                                else
-                                    x = wTotal + try guiElementX.i32()? else 0 end
-                                end
-                            end
-                            
-                            if guiElement.properties.contains("y") then
-                                let guiElementY = guiElement.properties("y")?
-                                
-                                if guiElementY == "center" then
-                                    y = hTotal + ((h - (radius * 2)) / 2) + radius
-                                else
-                                    y = hTotal + try guiElementY.i32()? else 0 end
-                                end
-                            end
-                            
-                            let antiAliased: Bool = try
-                                if guiElement.properties("anti-aliased")? == "1" then true else false end
-                            else
-                                true // default to true
-                            end
-                            
-                            let border: Bool = try
-                                if guiElement.properties("border")? == "1" then true else false end
-                            else
-                                true // default to true
-                            end
-                            
-                            var borderColor: U32 = 0
-                            
-                            if border and guiElement.properties.contains("border-color") then
-                                // convert to a hexadecimal string
-                                var borderColorAsString = "0x" + try guiElement.properties("border-color")? else "" end
-                                
-                                // default to 0 for any missing RGB values
-                                while borderColorAsString.size() < 10 do
-                                    borderColorAsString = borderColorAsString + 
-                                        if borderColorAsString.size() < 8 then "0" else "F" end
-                                end
-                                
-                                // convert to a unsigned integer
-                                borderColor = try borderColorAsString.u32()? else 0 end
-                            end
-                            
-                            if guiElement.properties.contains("fill") then
-                                // convert to a hexadecimal string
-                                var fillAsString = "0x" + try guiElement.properties("fill")? else "" end
-                                
-                                // default to 0 for any missing RGB values
-                                while fillAsString.size() < 10 do
-                                    fillAsString = fillAsString + 
-                                        if fillAsString.size() < 8 then "0" else "F" end
-                                end
-                                
-                                // convert to a unsigned integer
-                                let fill = try fillAsString.u32()? else 0 end
-                                
-                                if antiAliased and not guiElement.properties.contains("border-color") then
-                                    borderColor = fill
-                                end
-                                
-                                callbacks.push(
-                                    gfx.FilledCircleColor~apply(renderer, x.i16(), y.i16(), radius.i16(), fill)
-                                )
-                            end
-                            
-                            if antiAliased then
-                                callbacks.push(
-                                    gfx.AACircleColor~apply(renderer, x.i16(), y.i16(), radius.i16(), borderColor)
-                                )
-                            else
-                                callbacks.push(
-                                    gfx.CircleColor~apply(renderer, x.i16(), y.i16(), radius.i16(), borderColor)
-                                )
-                            end
-                        end
-                    | "load" =>
-                        match guiElement.properties("media")?
-                        | "image" =>
-                            let re = _renderImage(guiElement, guiElement, w, h, wTotal, hTotal)?
-                            
-                            let styleEvents = guiElement.events.values()
-                            
-                            while styleEvents.has_next() do
-                                var styleEvent = styleEvents.next()?
-                                var reForStyle = _renderImage(guiElement, styleEvent, w, h, wTotal, hTotal)?
-                                
-                                re.events.insert(styleEvent.id, reForStyle)?
-                            end
-                            
-                            elements.push(re)
-                        end
-                    | "text" =>
-                        let fontName = guiElement.properties("font")?
-                        let fontSize = guiElement.properties("font-size")?.i32()?
-                        
-                        // convert to a hexadecimal string
-                        var fontColorAsString = "0x" + try guiElement.properties("font-color")? else "" end
-                        
-                        // default to 0 for any missing RGB values
-                        while fontColorAsString.size() < 10 do
-                            fontColorAsString = fontColorAsString + 
-                                if fontColorAsString.size() < 8 then "0" else "F" end
-                        end
-                        
-                        // convert to a unsigned integer
-                        let fontColor = try fontColorAsString.u32()? else 0 end
-                        
-                        // load our font
-                        
-                        let font = ttf.OpenFont(fontName, fontSize)
-                        Debug.out("font = " + font.usize().string())
-                        
-                        if font.is_null() then
-                            logAndExit("load font error")?
-                        end
-                        
-                        let fontSurface = ttf.RenderUTF8Blended(font, guiElement.properties("value")?, fontColor)
-                        
-                        if fontSurface.is_null() then
-                            logAndExit("font surface error")?
-                    	end
-                        
-                        texture = sdl.CreateTextureFromSurface(renderer, fontSurface)
-                        sdl.FreeSurface(fontSurface)
-                        
-                        ttf.CloseFont(font)
-                    end
-                    
-                    // TODO: refactor all the commands to work like "load"
-                    //       and then remove this condition
-                    if guiElement.command != "load" then
-                        let re = RenderElement
-                        re.id = guiElement.id
-                        
-                        if callbacks.size() > 0 then
-                            re.callbacks = callbacks
-                        end
-                        
-                        if not texture.is_null() then
-                            re.texture = texture
-                            re.rect = _getRect(texture, guiElement, w, h, wTotal, hTotal)?
-                        end
-                        
-                        elements.push(re)
-                    end
-                end
-                
-                wTotal = wTotal + w
-            end
-            
-            hTotal = hTotal + h
-        end
-        
-        // event polling
-        
-        var poll = true
-        while poll do
-            var more: I32 = 1
-            while more > 0 do
-                sdl.PumpEvents()
-                
-                var peek: sdl.CommonEvent ref = sdl.CommonEvent
-                sdl.PeekEvent(MaybePointer[sdl.CommonEvent](peek))
-                
-                match peek.eventType
-                | sdl.EVENTMOUSEMOTION() =>
-                    var event: sdl.MouseMotionEvent ref = sdl.MouseMotionEvent
-                    more = sdl.PollMouseMotionEvent(MaybePointer[sdl.MouseMotionEvent](event))
-                    
-                    Debug.out("x = " + event.x.string())
-                    Debug.out("y = " + event.y.string())
-                    
-                    if events.contains("over") then
-                        let guiEvents = events("over")?.values()
-                        let renderElements = elements.values()
-                        
-                        while guiEvents.has_next() do
-                            var ge = guiEvents.next()?
-                            
-                            while renderElements.has_next() do
-                                var re = renderElements.next()?
-                                
-                                if ge.id == re.id then
-                                    if (event.x >= re.rect.x) and
-                                       (event.x <= (re.rect.x + re.rect.w)) and
-                                       (event.y >= re.rect.y) and
-                                       (event.y <= (re.rect.y + re.rect.h)) then
-                                        
-                                        let commands = ge.commands.values()
-                                        
-                                        while commands.has_next() do
-                                            var command = commands.next()?
-                                            
-                                            var reEvent = re.events(command.eventId)?
-                                            var when = false
-                                            
-                                            if not re.data.contains(command.whenVar) then
-                                                re.data.insert(command.whenVar, "0")?
-                                            end
-                                            
-                                            if re.data(command.whenVar)? == command.whenVal then
-                                                when = true
-                                            end
-                                            
-                                            if when and (reEvent.texture != re.texture) then
-                                                re.textureLast = re.texture
-                                                re.rectLast = re.rect
-                                                
-                                                re.texture = reEvent.texture
-                                                re.rect = reEvent.rect
-                                            end
-                                        end
-                                    else
-                                        if not re.textureLast.is_null() then
-                                            re.texture = re.textureLast
-                                            re.rect = re.rectLast
-                                        end
-                                    end
-                                end
-                            end
-                        end
-                    end
-                | sdl.EVENTQUIT() =>
-                    more = 0
-                    poll = false
-                else
-                    var event: sdl.CommonEvent ref = sdl.CommonEvent
-                    more = sdl.PollCommonEvent(MaybePointer[sdl.CommonEvent](event))
-                end
-            end
-            
-            // set our background color
-            sdl.SetRenderDrawColor(renderer, 0x31, 0x3D, 0x78, 0xFF)
-            
-            // remove all drawn items
-            sdl.RenderClear(renderer)
-            
-            let re = elements.values()
-            
-            while re.has_next() do
-                let element = re.next()?
-                
-                if not element.texture.is_null() then
-                    sdl.RenderCopy(renderer, element.texture, Pointer[sdl.Rect], MaybePointer[sdl.Rect](element.rect))
-                end
-                
-                let cb = element.callbacks.values()
-                
-                while cb.has_next() do
-                    cb.next()?()
-                end
-            end
-            
-            // display everything
-            sdl.RenderPresent(renderer)
-        end
-        
-        logAndExit()?
     
     fun ref logAndExit(msg: String = "", isSDL: Bool = true)? =>
         if initTTF == 0 then
@@ -417,61 +304,3 @@ class App
         out.exitcode(1)
         
         error
-    
-    fun ref _renderImage(geOld: GuiElement, geNew: GuiElement, w: I32, h: I32, wTotal: I32, hTotal: I32): RenderElement ? =>
-        let ge = geOld
-        
-        let geProps = geNew.properties.pairs()
-        
-        while geProps.has_next() do
-            var geProp = geProps.next()?
-            ge.properties.update(geProp._1, geProp._2)
-        end
-        
-        let image = img.Load(ge.properties("src")?)
-        
-        if image.is_null() then
-            logAndExit("load image error")?
-        end
-        
-        let texture = sdl.CreateTextureFromSurface(renderer, image)
-        sdl.FreeSurface(image)
-        
-        let re = RenderElement
-        
-        re.id = ge.id
-        re.texture = texture
-        re.rect = _getRect(texture, ge, w, h, wTotal, hTotal)?
-        
-        re
-    
-    fun ref _getRect(texture: Pointer[sdl.Texture], guiElement: GuiElement, 
-                     w: I32, h: I32, wTotal: I32, hTotal: I32): sdl.Rect ? =>
-        
-        let rect = sdl.Rect
-        
-        sdl.QueryTexture(texture, Pointer[U32], Pointer[I32], rect)
-        
-        if guiElement.properties.contains("x") then
-            let guiElementX = guiElement.properties("x")?
-            
-            if guiElementX == "center" then
-                rect.w = if rect.w > w then w else rect.w end
-                rect.x = wTotal + ((w - rect.w) / 2)
-            else
-                rect.x = wTotal + try guiElementX.i32()? else 0 end
-            end
-        end
-        
-        if guiElement.properties.contains("y") then
-            let guiElementY = guiElement.properties("y")?
-            
-            if guiElementY == "center" then
-                rect.h = if rect.h > h then h else rect.h end
-                rect.y = hTotal + ((h - rect.h) / 2)
-            else
-                rect.y = hTotal + try guiElementY.i32()? else 0 end
-            end
-        end
-        
-        rect

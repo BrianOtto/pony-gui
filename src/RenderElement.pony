@@ -12,6 +12,18 @@ class RenderElement
     var events: Map[String, RenderElement] = Map[String, RenderElement]
     var data: Map[String, String] = Map[String, String]
     
-    new create(t: Pointer[sdl.Texture] = Pointer[sdl.Texture], r: sdl.Rect = sdl.Rect) =>
-        texture = t
-        rect = r
+    new create() => None
+    
+    fun ref clone(): RenderElement =>
+        let re = RenderElement
+        
+        re.id = id
+        re.callbacks = callbacks
+        re.texture = texture
+        re.textureLast = textureLast
+        re.rect = rect
+        re.rectLast = rectLast
+        re.events = events
+        re.data = data
+        
+        re

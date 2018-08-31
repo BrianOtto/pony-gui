@@ -9,7 +9,12 @@ class Gui
     new create(myApp: App) =>
         app = myApp
     
-    fun ref load(fileName: String = "layout.gui")? =>
+    fun ref load(fileName: String = "layout.gui", clear: Bool = false)? =>
+        if clear then
+            app.gui.clear()
+            app.events.clear()
+        end
+        
         let caps = recover val FileCaps.>set(FileRead).>set(FileStat) end
         let filePath = try FilePath(app.out.root as AmbientAuth, fileName, caps)? else 
             app.logAndExit("The \"" + fileName + "\" file is missing or has incorrect permissions.", false)?
@@ -343,28 +348,47 @@ class Gui
                             continue
                         end
                         
-                        let comm: Array[String] = line.split_by(" ")
-                        let commKey = comm(0)?
+                        let eventCommand: Array[String] = line.split_by(" ")
+                        let command = eventCommand(0)?
                         
-                        if (commKey == "style") or (commKey == "event") then
+                        if (command == "style") or (command == "event") then
                             prev = line
                             break
                         else
                             try
-                                // TODO: loop on the key/value pairs instead of hard-coding the numeric locations
-                                //       and add support for other commands like set / get / any / all
-                                let commValue: String val = comm(1)?.clone().>strip("\"").>replace(placeholder, " ")
+                                var eventId: String val = ""
+                                var dataVar: String val = ""
+                                var dataVal: String val = ""
+                                var whenVar: String val = ""
+                                var whenVal: String val = ""
+                                var elseVar: String val = ""
+                                var elseVal: String val = ""
                                 
-                                let whenKey: String val = comm(3)?
-                                let whenValue: String val = comm(4)?.clone().>strip("\"").>replace(placeholder, " ")
+                                match command
+                                | "run" =>
+                                    eventId = eventCommand(1)?
+                                    whenVar = eventCommand(3)?
+                                    whenVal = eventCommand(4)?
+                                | "set" =>
+                                    dataVar = eventCommand(1)?
+                                    dataVal = eventCommand(2)?
+                                    whenVar = eventCommand(4)?
+                                    whenVal = eventCommand(5)?
+                                    elseVar = eventCommand(7)?
+                                    elseVal = eventCommand(8)?
+                                end
                                 
-                                let command: GuiEventCommand ref = GuiEventCommand
-                                command.command = commKey
-                                command.eventId = commValue
-                                command.whenVar = whenKey
-                                command.whenVal = whenValue
+                                let gec: GuiEventCommand ref = GuiEventCommand
+                                gec.command = command
+                                gec.eventId = eventId.clone().>strip("\"").>replace(placeholder, " ")
+                                gec.dataVar = dataVar.clone().>strip("\"").>replace(placeholder, " ")
+                                gec.dataVal = dataVal.clone().>strip("\"").>replace(placeholder, " ")
+                                gec.whenVar = whenVar.clone().>strip("\"").>replace(placeholder, " ")
+                                gec.whenVal = whenVal.clone().>strip("\"").>replace(placeholder, " ")
+                                gec.elseVar = elseVar.clone().>strip("\"").>replace(placeholder, " ")
+                                gec.elseVal = elseVal.clone().>strip("\"").>replace(placeholder, " ")
                                 
-                                guiEvent.commands.push(command)
+                                guiEvent.commands.push(gec)
                             end
                         end
                     end

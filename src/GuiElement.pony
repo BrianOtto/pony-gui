@@ -7,3 +7,13 @@ class GuiElement
     var events: Array[GuiElement] = Array[GuiElement]
 
     new create() => None
+    
+    fun ref clone(): GuiElement =>
+        let ge = GuiElement
+        
+        ge.id = id
+        ge.command = command
+        ge.properties = properties
+        ge.events = events
+        
+        ge

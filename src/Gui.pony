@@ -9,7 +9,7 @@ class Gui
     new create(myApp: App) =>
         app = myApp
     
-    fun ref load(fileName: String = "layout.gui", clear: Bool = false)? =>
+    fun ref load(fileName: String = "layout.gui", clear: Bool = false) ? =>
         if clear then
             app.gui.clear()
             app.events.clear()

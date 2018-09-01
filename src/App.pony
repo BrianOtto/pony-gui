@@ -26,7 +26,7 @@ class App
     new create(env: Env) =>
         out = env
     
-    fun ref init()? =>
+    fun ref init() ? =>
         // load our gui and events
         Gui(this).load()?
         
@@ -55,131 +55,42 @@ class App
                     var event: sdl.MouseMotionEvent ref = sdl.MouseMotionEvent
                     more = sdl.PollMouseMotionEvent(MaybePointer[sdl.MouseMotionEvent](event))
                     
-                    Debug.out("x = " + event.x.string())
-                    Debug.out("y = " + event.y.string())
+                    let elementsByEvent = _getElementsByEvent("over")?
+                    let reEvents = elementsByEvent.values()
                     
-                    if events.contains("over") then
-                        let guiEvents = events("over")?.values()
-                        let renderElements = elements.values()
+                    while reEvents.has_next() do
+                        (let ge, let re) = reEvents.next()?
                         
-                        while guiEvents.has_next() do
-                            var ge = guiEvents.next()?
-                            
-                            while renderElements.has_next() do
-                                var re = renderElements.next()?
-                                
-                                if ge.id == re.id then
-                                    if (event.x >= re.rect.x) and
-                                       (event.x <= (re.rect.x + re.rect.w)) and
-                                       (event.y >= re.rect.y) and
-                                       (event.y <= (re.rect.y + re.rect.h)) then
-                                        
-                                        let commands = ge.commands.values()
-                                        
-                                        while commands.has_next() do
-                                            var command = commands.next()?
-                                            
-                                            var reEvent = try re.events(command.eventId)? else continue end
-                                            var when = false
-                                            
-                                            if not re.data.contains(command.whenVar) then
-                                                re.data.insert(command.whenVar, "0")?
-                                            end
-                                            
-                                            if re.data(command.whenVar)? == command.whenVal then
-                                                when = true
-                                            end
-                                            Debug(command.whenVar+"="+re.data(command.whenVar)?)
-                                            if when and (reEvent.texture != re.texture) then
-                                                re.textureLast = re.texture
-                                                re.rectLast = re.rect
-                                                
-                                                re.texture = reEvent.texture
-                                                re.rect = reEvent.rect
-                                            end
-                                        end
-                                    else
-                                        // over is always a temporary change in style
-                                        // TODO: add an out command instead and use it when it exists
-                                        if not re.textureLast.is_null() then
-                                            re.texture = re.textureLast
-                                            re.rect = re.rectLast
-                                        end
-                                    end
-                                end
-                            end
+                        Debug.out("x = " + event.x.string())
+                        Debug.out("y = " + event.y.string())
+                        
+                        if (event.x >= re.rect.x) and (event.x <= (re.rect.x + re.rect.w)) and
+                           (event.y >= re.rect.y) and (event.y <= (re.rect.y + re.rect.h)) then
+                           
+                           Debug.out("over")
+                           
+                           _runEventCommands(ge, re)?
                         end
                     end
                 | sdl.EVENTMOUSEBUTTONUP() =>
                     var event: sdl.MouseButtonEvent ref = sdl.MouseButtonEvent
                     more = sdl.PollMouseButtonEvent(MaybePointer[sdl.MouseButtonEvent](event))
                     
-                    Debug.out("clicks = " + event.clicks.string())
+                    let elementsByEvent = _getElementsByEvent("click")?
+                    let reEvents = elementsByEvent.values()
                     
-                    if events.contains("click") then
-                        let guiEvents = events("click")?.values()
-                        let renderElements = elements.values()
+                    while reEvents.has_next() do
+                        (let ge, let re) = reEvents.next()?
                         
-                        while guiEvents.has_next() do
-                            var ge = guiEvents.next()?
-                            
-                            while renderElements.has_next() do
-                                var re = renderElements.next()?
-                                
-                                if ge.id == re.id then
-                                    if (event.x >= re.rect.x) and
-                                       (event.x <= (re.rect.x + re.rect.w)) and
-                                       (event.y >= re.rect.y) and
-                                       (event.y <= (re.rect.y + re.rect.h)) then
-                                       
-                                        let commands = ge.commands.values()
-                                        
-                                        while commands.has_next() do
-                                            var command = commands.next()?
-                                            
-                                            var when = false
-                                            
-                                            if not re.data.contains(command.whenVar) then
-                                                re.data.insert(command.whenVar, "0")?
-                                            end
-                                            
-                                            if re.data(command.whenVar)? == command.whenVal then
-                                                when = true
-                                            end
-                                            
-                                            if command.command == "set" then
-                                                if when then
-                                                    if re.data.contains(command.dataVar) then
-                                                        re.data.update(command.dataVar, command.dataVal)
-                                                    else
-                                                        re.data.insert(command.dataVar, command.dataVal)?
-                                                    end
-                                                else
-                                                    if re.data.contains(command.elseVar) then
-                                                        re.data.update(command.elseVar, command.elseVal)
-                                                    else
-                                                        re.data.insert(command.elseVar, command.elseVal)?
-                                                    end
-                                                end
-                                            end
-                                            
-                                            if command.command == "run" then
-                                                var reEvent = RenderElement
-                                                reEvent = try re.events(command.eventId)? else continue end
-                                                
-                                                // click is always a permanent change in style
-                                                if when then
-                                                    re.textureLast = re.texture
-                                                    re.rectLast = re.rect
-                                                    
-                                                    re.texture = reEvent.texture
-                                                    re.rect = reEvent.rect
-                                                end
-                                            end
-                                        end
-                                    end
-                                end
-                            end
+                        Debug.out("x = " + event.x.string())
+                        Debug.out("y = " + event.y.string())
+                        
+                        if (event.x >= re.rect.x) and (event.x <= (re.rect.x + re.rect.w)) and
+                           (event.y >= re.rect.y) and (event.y <= (re.rect.y + re.rect.h)) then
+                           
+                           Debug.out("click")
+                           
+                           _runEventCommands(ge, re)?
                         end
                     end
                 | sdl.EVENTQUIT() =>
@@ -219,7 +130,7 @@ class App
         
         logAndExit()?
     
-    fun ref _initLibraries()? =>
+    fun ref _initLibraries() ? =>
         // initialize SDL
         
         initSDL = sdl.Init(sdl.INITVIDEO())
@@ -272,7 +183,62 @@ class App
             logAndExit("init ttf error")?
         end
     
-    fun ref logAndExit(msg: String = "", isSDL: Bool = true)? =>
+    fun ref _getElementsByEvent(eventType: String): Array[(GuiEvent, RenderElement)] ? =>
+        var elementsByEvent: Array[(GuiEvent, RenderElement)] = []
+        
+        if events.contains(eventType) then
+            let guiEvents = events(eventType)?.values()
+            let renderElements = elements.values()
+            
+            while guiEvents.has_next() do
+                let ge = guiEvents.next()?
+                
+                while renderElements.has_next() do
+                    let re = renderElements.next()?
+                    
+                    if ge.id == re.id then
+                        elementsByEvent.push((ge, re))
+                    end
+                end
+            end
+        end
+        
+        elementsByEvent
+    
+    fun ref _runEventCommands(ge: GuiEvent, re: RenderElement) ? =>
+        let commands = ge.commands.values()
+        
+        while commands.has_next() do
+            let command = commands.next()?
+            var when = false
+            
+            if not re.data.contains(command.whenVar) then
+                re.data.insert(command.whenVar, "0")?
+            end
+            
+            if re.data(command.whenVar)? == command.whenVal then
+                when = true
+            end
+            
+            match command.command
+            | "set" =>
+                if when then
+                    re.data.update(command.dataVar, command.dataVal)
+                else
+                    re.data.update(command.elseVar, command.elseVal)
+                end
+            | "run" =>
+                var reEvent = RenderElement
+                reEvent = try re.events(command.eventId)? else continue end
+                
+                if when then
+                    re.texture = reEvent.texture
+                    re.rect = reEvent.rect
+                end
+            end
+        end
+    
+    fun ref logAndExit(msg: String = "", isSDL: Bool = true) ? =>
         if initTTF == 0 then
             ttf.Quit()
         end

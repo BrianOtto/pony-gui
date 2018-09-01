@@ -11,7 +11,7 @@ class Render
     new create(myApp: App) =>
         app = myApp
     
-    fun ref load(gui: Array[GuiRow] = Array[GuiRow])? =>
+    fun ref load(gui: Array[GuiRow] = Array[GuiRow]) ? =>
         app.elements.clear()
         
         var hTotal: I32 = 0

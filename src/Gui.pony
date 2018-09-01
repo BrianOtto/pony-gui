@@ -6,6 +6,9 @@ use "regex"
 class Gui
     var app: App
     
+    // Group Separator (ASCII 29)
+    let placeholder: String = "\u001D"
+    
     new create(myApp: App) =>
         app = myApp
     
@@ -28,9 +31,6 @@ class Gui
         
         var rowCounter: USize = 0
         var colCounter: USize = 0
-        
-        // Group Separator (ASCII 29)
-        let placeholder = "\u001D"
         
         let lines = file.lines()
         
@@ -61,27 +61,9 @@ class Gui
             try
                 // display a syntax error when the line doesn't match the expression
                 // otherwise return the line as a string that can be iterated on
-                let lineMatch: String val = lineRegex(line)?(0)?
-                let lineMatchClean: String ref = lineMatch.clone()
+                let matchClean = _cleanLine(lineRegex(line)?(0)?)?
                 
-                // get all property values (e.g. value "Pony GUI")
-                let lm = MatchIterator(Regex("\"[^\"]+\"")?, lineMatch, 0)
-                
-                while lm.has_next() do
-                    var lmValue = try lm.next()? else break end
-                    
-                    var lmStart = lmValue.start_pos().isize()
-                    var lmEnd = lmValue.end_pos().isize() + 1
-                    
-                    var lmString: String = lineMatchClean.substring(lmStart, lmEnd)
-                    
-                    // replace all spaces with a placeholder
-                    // it needs to be any character that will never be used in a value
-                    // so we can split on spaces when we get an element's properties
-                    lineMatchClean.replace(lmString, lmString.clone().>replace(" ", placeholder))
-                end
-                
-                let guiProperties: Array[String] = lineMatchClean.split_by(" ")
+                let guiProperties: Array[String] = matchClean.split_by(" ")
                 let gp = guiProperties.values()
                 
                 match guiProperties(0)?
@@ -248,7 +230,9 @@ class Gui
                             continue
                         end
                         
-                        let prop: Array[String] = line.split_by(" ")
+                        let lineClean = _cleanLine(line)?
+                        
+                        let prop: Array[String] = lineClean.split_by(" ")
                         let propKey = prop(0)?
                         
                         if (propKey == "style") or (propKey == "event") then
@@ -348,48 +332,57 @@ class Gui
                             continue
                         end
                         
-                        let eventCommand: Array[String] = line.split_by(" ")
+                        let lineClean = _cleanLine(line)?
+                        
+                        let eventCommand: Array[String] = lineClean.split_by(" ")
                         let command = eventCommand(0)?
                         
                         if (command == "style") or (command == "event") then
                             prev = line
                             break
                         else
-                            try
-                                var eventId: String val = ""
-                                var dataVar: String val = ""
-                                var dataVal: String val = ""
-                                var whenVar: String val = ""
-                                var whenVal: String val = ""
-                                var elseVar: String val = ""
-                                var elseVal: String val = ""
+                            var eventId: String val = ""
+                            var dataVar: String val = ""
+                            var dataVal: String val = ""
+                            var whenVar: String val = ""
+                            var whenVal: String val = ""
+                            var elseVar: String val = ""
+                            var elseVal: String val = ""
+                            
+                            match command
+                            | "run" =>
+                                eventId = eventCommand(1)?
                                 
-                                match command
-                                | "run" =>
-                                    eventId = eventCommand(1)?
-                                    whenVar = eventCommand(3)?
-                                    whenVal = eventCommand(4)?
-                                | "set" =>
-                                    dataVar = eventCommand(1)?
-                                    dataVal = eventCommand(2)?
-                                    whenVar = eventCommand(4)?
-                                    whenVal = eventCommand(5)?
-                                    elseVar = eventCommand(7)?
-                                    elseVal = eventCommand(8)?
+                                whenVar = try eventCommand(3)? else "" end
+                                whenVal = try eventCommand(4)? else
+                                    if whenVar == "" then "" else error end
+                                end
+                            | "set" =>
+                                dataVar = eventCommand(1)?
+                                dataVal = eventCommand(2)?
+                                
+                                whenVar = try eventCommand(4)? else "" end
+                                whenVal = try eventCommand(5)? else
+                                    if whenVar == "" then "" else error end
                                 end
                                 
-                                let gec: GuiEventCommand ref = GuiEventCommand
-                                gec.command = command
-                                gec.eventId = eventId.clone().>strip("\"").>replace(placeholder, " ")
-                                gec.dataVar = dataVar.clone().>strip("\"").>replace(placeholder, " ")
-                                gec.dataVal = dataVal.clone().>strip("\"").>replace(placeholder, " ")
-                                gec.whenVar = whenVar.clone().>strip("\"").>replace(placeholder, " ")
-                                gec.whenVal = whenVal.clone().>strip("\"").>replace(placeholder, " ")
-                                gec.elseVar = elseVar.clone().>strip("\"").>replace(placeholder, " ")
-                                gec.elseVal = elseVal.clone().>strip("\"").>replace(placeholder, " ")
-                                
-                                guiEvent.commands.push(gec)
+                                elseVar = try eventCommand(7)? else "" end
+                                elseVal = try eventCommand(8)? else
+                                    if elseVar == "" then "" else error end
+                                end
                             end
+                            
+                            let gec: GuiEventCommand ref = GuiEventCommand
+                            gec.command = command
+                            gec.eventId = eventId.clone().>strip("\"").>replace(placeholder, " ")
+                            gec.dataVar = dataVar.clone().>strip("\"").>replace(placeholder, " ")
+                            gec.dataVal = dataVal.clone().>strip("\"").>replace(placeholder, " ")
+                            gec.whenVar = whenVar.clone().>strip("\"").>replace(placeholder, " ")
+                            gec.whenVal = whenVal.clone().>strip("\"").>replace(placeholder, " ")
+                            gec.elseVar = elseVar.clone().>strip("\"").>replace(placeholder, " ")
+                            gec.elseVal = elseVal.clone().>strip("\"").>replace(placeholder, " ")
+                            
+                            guiEvent.commands.push(gec)
                         end
                     end
                     
@@ -507,3 +500,25 @@ class Gui
         end
         
         Debug.out("")
+        
+    fun ref _cleanLine(line: String): String ref ? =>
+        let lineClean: String ref = line.clone()
+        
+        // get all property values (e.g. value "Pony GUI")
+        let lm = MatchIterator(Regex("\"[^\"]+\"")?, line, 0)
+        
+        while lm.has_next() do
+            var lmValue = try lm.next()? else break end
+            
+            var lmStart = lmValue.start_pos().isize()
+            var lmEnd = lmValue.end_pos().isize() + 1
+            
+            var lmString: String = lineClean.substring(lmStart, lmEnd)
+            
+            // replace all spaces with a placeholder
+            // it needs to be any character that will never be used in a value
+            // so we can split on spaces when we get an element's properties
+            lineClean.replace(lmString, lmString.clone().>replace(" ", placeholder))
+        end
+        
+        lineClean

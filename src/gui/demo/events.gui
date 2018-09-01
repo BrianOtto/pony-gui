@@ -10,3 +10,6 @@ event id "img-logo" type "click"
     set clicked "1" when clicked "0" else clicked "0"
     run "logo-clicked-over" when clicked "1"
     run "logo-over" when clicked "0"
+
+event id "txt-header" type "click"
+    run "header-clicked"

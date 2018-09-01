@@ -209,10 +209,11 @@ class App
         
         if events.contains(eventType) then
             let guiEvents = events(eventType)?.values()
-            let renderElements = elements.values()
             
             while guiEvents.has_next() do
                 let ge = guiEvents.next()?
+                
+                let renderElements = elements.values()
                 
                 while renderElements.has_next() do
                     let re = renderElements.next()?
@@ -233,12 +234,16 @@ class App
             let command = commands.next()?
             var when = false
             
-            if not re.data.contains(command.whenVar) then
-                re.data.insert(command.whenVar, "0")?
-            end
-            
-            if re.data(command.whenVar)? == command.whenVal then
+            if command.whenVar == "" then
                 when = true
+            else
+                if not re.data.contains(command.whenVar) then
+                    re.data.insert(command.whenVar, "0")?
+                end
+                
+                if re.data(command.whenVar)? == command.whenVal then
+                    when = true
+                end
             end
             
             match command.command

@@ -26,3 +26,6 @@ style id "img-logo" event "logo-clicked"
 
 style id "img-logo" event "logo-clicked-over"
     src "sample-clicked-over.png"
+
+style id "txt-header" event "header-clicked"
+    value "Pony GUI is Awesome!"

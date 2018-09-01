@@ -55,14 +55,14 @@ class App
                     var event: sdl.MouseMotionEvent ref = sdl.MouseMotionEvent
                     more = sdl.PollMouseMotionEvent(MaybePointer[sdl.MouseMotionEvent](event))
                     
-                    let elementsByEvent = _getElementsByEvent("over")?
-                    let reEvents = elementsByEvent.values()
+                    Debug.out("x = " + event.x.string())
+                    Debug.out("y = " + event.y.string())
+                    
+                    var elementsByEvent = _getElementsByEvent("over")?
+                    var reEvents = elementsByEvent.values()
                     
                     while reEvents.has_next() do
                         (let ge, let re) = reEvents.next()?
-                        
-                        Debug.out("x = " + event.x.string())
-                        Debug.out("y = " + event.y.string())
                         
                         if (event.x >= re.rect.x) and (event.x <= (re.rect.x + re.rect.w)) and
                            (event.y >= re.rect.y) and (event.y <= (re.rect.y + re.rect.h)) then
@@ -72,18 +72,33 @@ class App
                            _runEventCommands(ge, re)?
                         end
                     end
+                    
+                    elementsByEvent = _getElementsByEvent("out")?
+                    reEvents = elementsByEvent.values()
+                    
+                    while reEvents.has_next() do
+                        (let ge, let re) = reEvents.next()?
+                        
+                        if (event.x < re.rect.x) or (event.x > (re.rect.x + re.rect.w)) or
+                           (event.y < re.rect.y) or (event.y > (re.rect.y + re.rect.h)) then
+                           
+                           Debug.out("out")
+                           
+                           _runEventCommands(ge, re)?
+                        end
+                    end
                 | sdl.EVENTMOUSEBUTTONUP() =>
                     var event: sdl.MouseButtonEvent ref = sdl.MouseButtonEvent
                     more = sdl.PollMouseButtonEvent(MaybePointer[sdl.MouseButtonEvent](event))
+                    
+                    Debug.out("x = " + event.x.string())
+                    Debug.out("y = " + event.y.string())
                     
                     let elementsByEvent = _getElementsByEvent("click")?
                     let reEvents = elementsByEvent.values()
                     
                     while reEvents.has_next() do
                         (let ge, let re) = reEvents.next()?
-                        
-                        Debug.out("x = " + event.x.string())
-                        Debug.out("y = " + event.y.string())
                         
                         if (event.x >= re.rect.x) and (event.x <= (re.rect.x + re.rect.w)) and
                            (event.y >= re.rect.y) and (event.y <= (re.rect.y + re.rect.h)) then
@@ -223,8 +238,10 @@ class App
             match command.command
             | "set" =>
                 if when then
+                    Debug.out("set " + command.dataVar + " = " + command.dataVal)
                     re.data.update(command.dataVar, command.dataVal)
                 else
+                    Debug.out("set " + command.elseVar + " = " + command.elseVal)
                     re.data.update(command.elseVar, command.elseVal)
                 end
             | "run" =>

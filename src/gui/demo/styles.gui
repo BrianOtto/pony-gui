@@ -20,11 +20,9 @@ style id "img-logo"
 
 style id "img-logo" event "logo-over"
     src "sample-over.png"
-    cursor "pointer"
 
 style id "img-logo" event "logo-clicked"
     src "sample-clicked.png"
 
 style id "img-logo" event "logo-clicked-over"
     src "sample-clicked-over.png"
-    cursor "pointer"

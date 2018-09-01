@@ -17,6 +17,44 @@ primitive BUTTONX1
 primitive BUTTONX2
     fun apply(): U8 => 5
 
+// Flags - Cursor
+
+primitive CURSORARROW
+    fun apply(): U8 => 0
+
+primitive CURSORCROSSHAIR
+    fun apply(): U8 => 3
+
+primitive CURSORHAND
+    fun apply(): U8 => 11
+
+primitive CURSORIBEAM
+    fun apply(): U8 => 1
+
+primitive CURSORNO
+    fun apply(): U8 => 10
+
+primitive CURSORSIZEALL
+    fun apply(): U8 => 9
+
+primitive CURSORSIZENESW
+    fun apply(): U8 => 6
+
+primitive CURSORSIZENS
+    fun apply(): U8 => 8
+
+primitive CURSORSIZENWSE
+    fun apply(): U8 => 5
+
+primitive CURSORSIZEWE
+    fun apply(): U8 => 7
+
+primitive CURSORWAIT
+    fun apply(): U8 => 2
+
+primitive CURSORWAITARROW
+    fun apply(): U8 => 4
+
 // Flags - Event
 
 primitive EVENTFIRSTEVENT
@@ -219,6 +257,7 @@ struct WindowEvent
 
 // Pointers
 
+primitive Cursor
 primitive Renderer
 primitive Surface
 primitive Texture
@@ -229,6 +268,10 @@ primitive Window
 primitive CreateRenderer
     fun apply(window: Pointer[Window], index: I32, flags: U32): Pointer[Renderer] =>
         @SDL_CreateRenderer[Pointer[Renderer]](window, index, flags)
+
+primitive CreateSystemCursor
+    fun apply(cursor: U8): Cursor =>
+        @SDL_CreateSystemCursor[Cursor](cursor)
 
 primitive CreateTextureFromSurface
     fun apply(renderer: Pointer[Renderer], surface: Pointer[Surface]): Pointer[Texture] =>
@@ -282,6 +325,10 @@ primitive RenderCopy
 primitive RenderPresent
     fun apply(renderer: Pointer[Renderer]): None =>
         @SDL_RenderPresent[None](renderer)
+
+primitive SetCursor
+    fun apply(cursor: Cursor): None =>
+        @SDL_SetCursor[None](cursor)
 
 primitive SetRenderDrawColor
     fun apply(renderer: Pointer[Renderer], r: U8, g: U8, b: U8, a: U8): U32 =>

@@ -69,6 +69,9 @@ class App
                            
                            Debug.out("over")
                            
+                           // TODO: add support for a "cursor" property
+                           sdl.SetCursor(sdl.CreateSystemCursor(sdl.CURSORHAND()))
+                           
                            _runEventCommands(ge, re)?
                         end
                     end
@@ -83,6 +86,9 @@ class App
                            (event.y < re.rect.y) or (event.y > (re.rect.y + re.rect.h)) then
                            
                            Debug.out("out")
+                           
+                           // TODO: add support for a "cursor" property
+                           sdl.SetCursor(sdl.CreateSystemCursor(sdl.CURSORARROW()))
                            
                            _runEventCommands(ge, re)?
                         end

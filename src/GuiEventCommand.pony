@@ -1,5 +1,6 @@
 class GuiEventCommand
     var command: String = ""
+    var runType: String = ""
     var eventId: String = ""
     var dataVar: String = ""
     var dataVal: String = ""

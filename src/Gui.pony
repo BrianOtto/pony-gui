@@ -341,6 +341,7 @@ class Gui
                             prev = line
                             break
                         else
+                            var runType: String val = ""
                             var eventId: String val = ""
                             var dataVar: String val = ""
                             var dataVal: String val = ""
@@ -351,29 +352,26 @@ class Gui
                             
                             match command
                             | "run" =>
-                                eventId = eventCommand(1)?
-                                
-                                whenVar = try eventCommand(3)? else "" end
-                                whenVal = try eventCommand(4)? else
-                                    if whenVar == "" then "" else error end
-                                end
+                                runType = eventCommand(1)?
+                                eventId = eventCommand(2)?
                             | "set" =>
                                 dataVar = eventCommand(1)?
                                 dataVal = eventCommand(2)?
-                                
-                                whenVar = try eventCommand(4)? else "" end
-                                whenVal = try eventCommand(5)? else
-                                    if whenVar == "" then "" else error end
-                                end
-                                
-                                elseVar = try eventCommand(7)? else "" end
-                                elseVal = try eventCommand(8)? else
-                                    if elseVar == "" then "" else error end
-                                end
+                            end
+                            
+                            whenVar = try eventCommand(4)? else "" end
+                            whenVal = try eventCommand(5)? else
+                                if whenVar == "" then "" else error end
+                            end
+                            
+                            elseVar = try eventCommand(7)? else "" end
+                            elseVal = try eventCommand(8)? else
+                                if elseVar == "" then "" else error end
                             end
                             
                             let gec: GuiEventCommand ref = GuiEventCommand
                             gec.command = command
+                            gec.runType = runType.clone().>strip("\"").>replace(placeholder, " ")
                             gec.eventId = eventId.clone().>strip("\"").>replace(placeholder, " ")
                             gec.dataVar = dataVar.clone().>strip("\"").>replace(placeholder, " ")
                             gec.dataVal = dataVal.clone().>strip("\"").>replace(placeholder, " ")

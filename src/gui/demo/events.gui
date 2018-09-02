@@ -1,15 +1,14 @@
 event id "img-logo" type "over"
-    run "logo-over" when clicked "0"
-    run "logo-clicked-over" when clicked "1"
+    run event "logo-over" when clicked "0"
+    run event "logo-clicked-over" when clicked "1"
 
 event id "img-logo" type "out"
-    run style when clicked "0"
-    run "logo-clicked" when clicked "1"
+    run event style when clicked "0" else event "logo-clicked"
 
 event id "img-logo" type "click"
     set clicked "1" when clicked "0" else clicked "0"
-    run "logo-clicked-over" when clicked "1"
-    run "logo-over" when clicked "0"
+    run event "logo-over" when clicked "0" else event "logo-clicked-over"
 
 event id "txt-header" type "click"
-    run "header-clicked"
+    run event "header-clicked"
+    run api "myMethod"

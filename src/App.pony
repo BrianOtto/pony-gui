@@ -251,17 +251,33 @@ class App
                 if when then
                     Debug.out("set " + command.dataVar + " = " + command.dataVal)
                     re.data.update(command.dataVar, command.dataVal)
-                else
+                elseif command.elseVar != "" then
                     Debug.out("set " + command.elseVar + " = " + command.elseVal)
                     re.data.update(command.elseVar, command.elseVal)
                 end
             | "run" =>
-                var reEvent = RenderElement
-                reEvent = try re.events(command.eventId)? else continue end
-                
                 if when then
-                    re.texture = reEvent.texture
-                    re.rect = reEvent.rect
+                    match command.runType
+                    | "event" =>
+                        var reEvent = RenderElement
+                        reEvent = try re.events(command.eventId)? else continue end
+                        
+                        re.texture = reEvent.texture
+                        re.rect = reEvent.rect
+                    | "api" =>
+                        Api(command.eventId, re)
+                    end
+                elseif command.elseVar != "" then
+                    match command.elseVar
+                    | "event" =>
+                        var reEvent = RenderElement
+                        reEvent = try re.events(command.elseVal)? else continue end
+                        
+                        re.texture = reEvent.texture
+                        re.rect = reEvent.rect
+                    | "api" =>
+                        Api(command.elseVal, re)
+                    end
                 end
             end
         end

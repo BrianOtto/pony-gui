@@ -408,7 +408,7 @@ class Gui
             let myRow = lr.next()?
             
             Debug.out("\nRow")
-            Debug.out("-----------------")
+            Debug.out("-----------------\n")
             Debug.out("id = " + myRow.id)
             Debug.out("height = " + myRow.height.string())
             
@@ -420,7 +420,7 @@ class Gui
                 while lc.has_next() do
                     let myCol = lc.next()?
                     
-                    Debug.out("-----------------")
+                    Debug.out("-----------------\n")
                     Debug.out("id = " + myCol.id)
                     Debug.out("width = " + myCol.width.string())
                     
@@ -432,7 +432,7 @@ class Gui
                         while lelements.has_next() do
                             let myElement = lelements.next()?
                             
-                            Debug.out("------------------")
+                            Debug.out("------------------\n")
                             Debug.out("id = " + myElement.id)
                             Debug.out("command = " + myElement.command)
                             
@@ -472,17 +472,19 @@ class Gui
         let lae = app.events.pairs()
             
         if lae.has_next() then
+            Debug.out("")
+            
             while lae.has_next() do
                 let myEventType = lae.next()?
                 
-                Debug.out("\nEvents - " + myEventType._1)
+                Debug.out("Events - " + myEventType._1)
                 
                 let myEvents = myEventType._2.values()
                 
                 while myEvents.has_next() do
                     let myEvent = myEvents.next()?
                     
-                    Debug.out("-----------------")
+                    Debug.out("-----------------\n")
                     Debug.out("id = " + myEvent.id)
                     
                     Debug.out("")
@@ -491,13 +493,20 @@ class Gui
                     
                     while lcommands.has_next() do
                         let myCommand = lcommands.next()?
-                        Debug.out(myCommand.command + " " + myCommand.eventId)
+                        
+                        let myCommandId = if myCommand.eventId == "" then
+                            myCommand.dataVar
+                        else
+                            myCommand.eventId
+                        end
+                        
+                        Debug.out(myCommand.command + " " + myCommandId)
                     end
+                    
+                    Debug.out("")
                 end
             end
         end
-        
-        Debug.out("")
         
     fun ref _cleanLine(line: String): String ref ? =>
         let lineClean: String ref = line.clone()

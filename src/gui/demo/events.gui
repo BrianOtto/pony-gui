@@ -9,6 +9,9 @@ event id "img-logo" type "click"
     set clicked "1" when clicked "0" else clicked "0"
     run event "logo-over" when clicked "0" else event "logo-clicked-over"
 
+event id "img-logo" type "data"
+    set updated "1"
+
 event id "txt-header" type "click"
     run event "header-clicked"
     run api "myMethod"

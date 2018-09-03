@@ -1,4 +1,5 @@
 use "collections"
+use "debug"
 
 use sdl = "sdl"
 
@@ -10,7 +11,7 @@ class RenderElement
     var rect: sdl.Rect = sdl.Rect
     var rectLast: sdl.Rect = sdl.Rect
     var events: Map[String, RenderElement] = Map[String, RenderElement]
-    var data: Map[String, String] = Map[String, String]
+    var _data: Map[String, String] = Map[String, String]
     
     new create() => None
     
@@ -24,6 +25,17 @@ class RenderElement
         re.rect = rect
         re.rectLast = rectLast
         re.events = events
-        re.data = data
+        re._data = _data
         
         re
+    
+    fun ref getData(): Map[String, String] =>
+        _data
+    
+    fun ref setDataValue(key: String, value: String): None =>
+        Debug.out("set " + key + " = " + value)
+        
+        _data.update(key, value)
+    
+    fun ref getDataValue(key: String): String ? =>
+        _data(key)?

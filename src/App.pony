@@ -66,13 +66,13 @@ class App
                         
                         if (event.x >= re.rect.x) and (event.x <= (re.rect.x + re.rect.w)) and
                            (event.y >= re.rect.y) and (event.y <= (re.rect.y + re.rect.h)) then
-                           
-                           Debug.out("over")
-                           
-                           // TODO: add support for a "cursor" property
-                           sdl.SetCursor(sdl.CreateSystemCursor(sdl.CURSORHAND()))
-                           
-                           _runEventCommands(ge, re)?
+
+                            Debug.out("over")
+
+                            // TODO: add support for a "cursor" property
+                            sdl.SetCursor(sdl.CreateSystemCursor(sdl.CURSORHAND()))
+
+                            _runEventCommands(ge, re)?
                         end
                     end
                     
@@ -84,13 +84,13 @@ class App
                         
                         if (event.x < re.rect.x) or (event.x > (re.rect.x + re.rect.w)) or
                            (event.y < re.rect.y) or (event.y > (re.rect.y + re.rect.h)) then
-                           
-                           Debug.out("out")
-                           
-                           // TODO: add support for a "cursor" property
-                           sdl.SetCursor(sdl.CreateSystemCursor(sdl.CURSORARROW()))
-                           
-                           _runEventCommands(ge, re)?
+
+                            Debug.out("out")
+
+                            // TODO: add support for a "cursor" property
+                            sdl.SetCursor(sdl.CreateSystemCursor(sdl.CURSORARROW()))
+
+                            _runEventCommands(ge, re)?
                         end
                     end
                 | sdl.EVENTMOUSEBUTTONUP() =>
@@ -108,10 +108,10 @@ class App
                         
                         if (event.x >= re.rect.x) and (event.x <= (re.rect.x + re.rect.w)) and
                            (event.y >= re.rect.y) and (event.y <= (re.rect.y + re.rect.h)) then
-                           
-                           Debug.out("click")
-                           
-                           _runEventCommands(ge, re)?
+
+                            Debug.out("click")
+
+                            _runEventCommands(ge, re)?
                         end
                     end
                 | sdl.EVENTQUIT() =>
@@ -227,7 +227,7 @@ class App
         
         elementsByEvent
     
-    fun ref _runEventCommands(ge: GuiEvent, re: RenderElement) ? =>
+    fun ref _runEventCommands(ge: GuiEvent, re: RenderElement, setData: Bool = false) ? =>
         let commands = ge.commands.values()
         
         while commands.has_next() do
@@ -237,11 +237,13 @@ class App
             if command.whenVar == "" then
                 when = true
             else
-                if not re.data.contains(command.whenVar) then
-                    re.data.insert(command.whenVar, "0")?
+                if not re.getData().contains(command.whenVar) then
+                    // we are just initializing an empty var and
+                    // so the data event doesn't need to be run
+                    re.setDataValue(command.whenVar, "0")
                 end
                 
-                if re.data(command.whenVar)? == command.whenVal then
+                if re.getDataValue(command.whenVar)? == command.whenVal then
                     when = true
                 end
             end
@@ -249,11 +251,26 @@ class App
             match command.command
             | "set" =>
                 if when then
-                    Debug.out("set " + command.dataVar + " = " + command.dataVal)
-                    re.data.update(command.dataVar, command.dataVal)
+                    re.setDataValue(command.dataVar, command.dataVal)
                 elseif command.elseVar != "" then
-                    Debug.out("set " + command.elseVar + " = " + command.elseVal)
-                    re.data.update(command.elseVar, command.elseVal)
+                    re.setDataValue(command.elseVar, command.elseVal)
+                end
+                
+                // make sure the data event has not already run
+                // otherwise we can get into an endless loop
+                if not setData then
+                    var elementsByEvent = _getElementsByEvent("data")?
+                    var reEvents = elementsByEvent.values()
+                    
+                    while reEvents.has_next() do
+                        (let geSet, let reSet) = reEvents.next()?
+
+                        if (re.id == reSet.id) then
+                            Debug.out("data")
+
+                            _runEventCommands(geSet, reSet, true)?
+                        end
+                    end
                 end
             | "run" =>
                 if when then

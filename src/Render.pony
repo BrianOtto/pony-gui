@@ -53,19 +53,23 @@ class Render
         | "draw" =>
             match ge.properties("shape")?
             | "circle" =>
+                // TODO: add support for mouse events
                 re = _renderDraw(ge, w, h, wTotal, hTotal)?
-                // TODO: add support for events
             end
         | "load" =>
             match ge.properties("media")?
             | "image" =>
                 re = _renderImage(ge, w, h, wTotal, hTotal)?
-                re.events.insert("style", re.clone())?
             end
         | "text" =>
             re = _renderText(ge, w, h, wTotal, hTotal)?
-            re.events.insert("style", re.clone())?
         end
+        
+        if ge.properties.contains("cursor") then
+            re.cursor = ge.properties("cursor")?
+        end
+        
+        re.events.insert("style", re.clone())?
         
         let styleEvents = ge.events.values()
         
@@ -92,6 +96,10 @@ class Render
                 end
             | "text" =>
                 reForStyle = _renderText(geNew, w, h, wTotal, hTotal)?
+            end
+            
+            if geNew.properties.contains("cursor") then
+                reForStyle.cursor = geNew.properties("cursor")?
             end
             
             re.events.insert(styleEvent.id, reForStyle)?

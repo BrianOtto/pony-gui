@@ -23,6 +23,8 @@ class App
     
     var renderer: Pointer[sdl.Renderer] = Pointer[sdl.Renderer]
     
+    var cursors: Map[String, sdl.Cursor] = Map[String, sdl.Cursor]
+    
     new create(env: Env) =>
         out = env
     
@@ -58,26 +60,8 @@ class App
                     Debug.out("x = " + event.x.string())
                     Debug.out("y = " + event.y.string())
                     
-                    var elementsByEvent = _getElementsByEvent("over")?
+                    var elementsByEvent = _getElementsByEvent("out")?
                     var reEvents = elementsByEvent.values()
-                    
-                    while reEvents.has_next() do
-                        (let ge, let re) = reEvents.next()?
-                        
-                        if (event.x >= re.rect.x) and (event.x <= (re.rect.x + re.rect.w)) and
-                           (event.y >= re.rect.y) and (event.y <= (re.rect.y + re.rect.h)) then
-
-                            Debug.out("over")
-
-                            // TODO: add support for a "cursor" property
-                            sdl.SetCursor(sdl.CreateSystemCursor(sdl.CURSORHAND()))
-
-                            _runEventCommands(ge, re)?
-                        end
-                    end
-                    
-                    elementsByEvent = _getElementsByEvent("out")?
-                    reEvents = elementsByEvent.values()
                     
                     while reEvents.has_next() do
                         (let ge, let re) = reEvents.next()?
@@ -85,10 +69,38 @@ class App
                         if (event.x < re.rect.x) or (event.x > (re.rect.x + re.rect.w)) or
                            (event.y < re.rect.y) or (event.y > (re.rect.y + re.rect.h)) then
 
-                            Debug.out("out")
+                            Debug.out("out = " + re.id)
 
-                            // TODO: add support for a "cursor" property
-                            sdl.SetCursor(sdl.CreateSystemCursor(sdl.CURSORARROW()))
+                            _runEventCommands(ge, re)?
+                        end
+                    end
+                    
+                    let reCursors = elements.values()
+            
+                    while reCursors.has_next() do
+                        let rc = reCursors.next()?
+                        
+                        if (event.x >= rc.rect.x) and (event.x <= (rc.rect.x + rc.rect.w)) and
+                           (event.y >= rc.rect.y) and (event.y <= (rc.rect.y + rc.rect.h)) then
+                            
+                            Debug.out("over for cursor = " + rc.id)
+                            
+                            if cursors.contains(rc.cursor) then
+                                sdl.SetCursor(cursors(rc.cursor)?)
+                            end
+                        end
+                    end
+                    
+                    elementsByEvent = _getElementsByEvent("over")?
+                    reEvents = elementsByEvent.values()
+                    
+                    while reEvents.has_next() do
+                        (let ge, let re) = reEvents.next()?
+                        
+                        if (event.x >= re.rect.x) and (event.x <= (re.rect.x + re.rect.w)) and
+                           (event.y >= re.rect.y) and (event.y <= (re.rect.y + re.rect.h)) then
+
+                            Debug.out("over = " + re.id)
 
                             _runEventCommands(ge, re)?
                         end
@@ -109,7 +121,7 @@ class App
                         if (event.x >= re.rect.x) and (event.x <= (re.rect.x + re.rect.w)) and
                            (event.y >= re.rect.y) and (event.y <= (re.rect.y + re.rect.h)) then
 
-                            Debug.out("click")
+                            Debug.out("click = " + re.id)
 
                             _runEventCommands(ge, re)?
                         end
@@ -180,6 +192,21 @@ class App
         if renderer.is_null() then
         	logAndExit("create renderer error")?
         end
+        
+        // create our cursors
+        
+        cursors.update("arrow", sdl.CreateSystemCursor(sdl.CURSORARROW()))
+        cursors.update("crosshair", sdl.CreateSystemCursor(sdl.CURSORCROSSHAIR()))
+        cursors.update("hand", sdl.CreateSystemCursor(sdl.CURSORHAND()))
+        cursors.update("ibeam", sdl.CreateSystemCursor(sdl.CURSORIBEAM()))
+        cursors.update("no", sdl.CreateSystemCursor(sdl.CURSORNO()))
+        cursors.update("sizeall", sdl.CreateSystemCursor(sdl.CURSORSIZEALL()))
+        cursors.update("sizenesw", sdl.CreateSystemCursor(sdl.CURSORSIZENESW()))
+        cursors.update("sizens", sdl.CreateSystemCursor(sdl.CURSORSIZENS()))
+        cursors.update("sizenwse", sdl.CreateSystemCursor(sdl.CURSORSIZENWSE()))
+        cursors.update("sizewe", sdl.CreateSystemCursor(sdl.CURSORSIZEWE()))
+        cursors.update("wait", sdl.CreateSystemCursor(sdl.CURSORWAIT()))
+        cursors.update("waitarrow", sdl.CreateSystemCursor(sdl.CURSORWAITARROW()))
         
         // initialize SDL Image
         
@@ -279,8 +306,13 @@ class App
                         var reEvent = RenderElement
                         reEvent = try re.events(command.eventId)? else continue end
                         
+                        re.cursor = reEvent.cursor
                         re.texture = reEvent.texture
                         re.rect = reEvent.rect
+                        
+                        if cursors.contains(re.cursor) then
+                            sdl.SetCursor(cursors(re.cursor)?)
+                        end
                     | "api" =>
                         Api(command.eventId, re)
                     end
@@ -290,8 +322,13 @@ class App
                         var reEvent = RenderElement
                         reEvent = try re.events(command.elseVal)? else continue end
                         
+                        re.cursor = reEvent.cursor
                         re.texture = reEvent.texture
                         re.rect = reEvent.rect
+                        
+                        if cursors.contains(re.cursor) then
+                            sdl.SetCursor(cursors(re.cursor)?)
+                        end
                     | "api" =>
                         Api(command.elseVal, re)
                     end

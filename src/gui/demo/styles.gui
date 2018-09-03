@@ -2,6 +2,7 @@ style id "txt-header"
     font "OpenSans-Regular.ttf"
     font-color "030307"
     font-size "34"
+    cursor "hand"
     x "center"
     y "center"
 
@@ -20,12 +21,15 @@ style id "img-logo"
 
 style id "img-logo" event "logo-over"
     src "sample-over.png"
+    cursor "hand"
 
 style id "img-logo" event "logo-clicked"
     src "sample-clicked.png"
+    cursor "arrow"
 
 style id "img-logo" event "logo-clicked-over"
     src "sample-clicked-over.png"
+    cursor "hand"
 
 style id "txt-header" event "header-clicked"
     value "Pony GUI is Awesome!"

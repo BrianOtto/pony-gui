@@ -313,6 +313,23 @@ class App
                         if cursors.contains(re.cursor) then
                             sdl.SetCursor(cursors(re.cursor)?)
                         end
+                        
+                        // run the event on all other elements
+                        if command.eventId != "style" then
+                            let reOther = elements.values()
+                            
+                            while reOther.has_next() do
+                                let ro = reOther.next()?
+                                
+                                if ro.id == re.id then continue end
+                                
+                                reEvent = try ro.events(command.eventId)? else continue end
+                                
+                                ro.cursor = reEvent.cursor
+                                ro.texture = reEvent.texture
+                                ro.rect = reEvent.rect
+                            end
+                        end
                     | "api" =>
                         Api(command.eventId, re)
                     end
@@ -328,6 +345,23 @@ class App
                         
                         if cursors.contains(re.cursor) then
                             sdl.SetCursor(cursors(re.cursor)?)
+                        end
+                        
+                        // run the event on all other elements
+                        if command.elseVal != "style" then
+                            let reOther = elements.values()
+                            
+                            while reOther.has_next() do
+                                let ro = reOther.next()?
+                                
+                                if ro.id == re.id then continue end
+                                
+                                reEvent = try ro.events(command.elseVal)? else continue end
+                                
+                                ro.cursor = reEvent.cursor
+                                ro.texture = reEvent.texture
+                                ro.rect = reEvent.rect
+                            end
                         end
                     | "api" =>
                         Api(command.elseVal, re)

@@ -33,3 +33,9 @@ style id "img-logo" event "logo-clicked-over"
 
 style id "txt-header" event "header-clicked"
     value "Pony GUI is Awesome!"
+
+style id "txt-header" event "logo-clicked-over"
+    value "The logo was clicked"
+
+style id "txt-header" event "logo-over"
+    value "Pony GUI"

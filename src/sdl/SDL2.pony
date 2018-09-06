@@ -149,11 +149,17 @@ primitive STATERELEASED
 
 // Flags - Window
 
+primitive WINDOWALLOWHIGHDPI
+    fun apply(): U32 => 0x00002000
+
 primitive WINDOWALWAYSONTOP
     fun apply(): U32 => 0x00008000
 
 primitive WINDOWBORDERLESS
     fun apply(): U32 => 0x00000010
+
+primitive WINDOWFOREIGN
+    fun apply(): U32 => 0x00000800
 
 primitive WINDOWFULLSCREEN
     fun apply(): U32 => 0x00000001
@@ -177,11 +183,17 @@ primitive WINDOWMAXIMIZED
 primitive WINDOWMINIMIZED
     fun apply(): U32 => 0x00000040
 
+primitive WINDOWMOUSECAPTURE
+    fun apply(): U32 => 0x00004000
+
 primitive WINDOWMOUSEFOCUS
     fun apply(): U32 => 0x00000400
 
 primitive WINDOWOPENGL
     fun apply(): U32 => 0x00000002
+
+primitive WINDOWPOPUPMENU
+    fun apply(): U32 => 0x00080000
 
 primitive WINDOWRESIZABLE
     fun apply(): U32 => 0x00000020
@@ -189,10 +201,17 @@ primitive WINDOWRESIZABLE
 primitive WINDOWSHOWN
     fun apply(): U32 => 0x00000004
 
+primitive WINDOWSKIPTASKBAR
+    fun apply(): U32 => 0x00010000
+
+primitive WINDOWTOOLTIP
+    fun apply(): U32 => 0x00040000
+
+primitive WINDOWUTILITY
+    fun apply(): U32 => 0x00020000
+
 primitive WINDOWVULKAN
     fun apply(): U32 => 0x10000000
-
-// TODO: Add the remaining window flags
 
 // Structs
 

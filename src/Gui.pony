@@ -90,6 +90,8 @@ class Gui
                             match key
                             | "title" =>
                                 app.windowTitle = value
+                            | "flags" =>
+                                app.windowFlags = value.clone().>remove(" ").split_by(",")
                             | "width" =>
                                 app.windowW = try value.i32()? else error end
                             | "height" =>

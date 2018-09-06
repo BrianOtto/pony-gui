@@ -21,6 +21,7 @@ class App
     var initTTF: U32 = 0
     
     var window: Pointer[sdl.Window] = Pointer[sdl.Window]
+    var windowFlags: Array[String] = Array[String]
     var windowTitle: String = ""
     var windowW: I32 = 1280
     var windowH: I32 = 720
@@ -225,11 +226,51 @@ class App
         
         // create our window
         
-        var wFlags = sdl.WINDOWSHOWN() // or sdl.WINDOWRESIZABLE()
+        var wFlags = sdl.WINDOWSHOWN()
         
-        if liveMode then
-            // TODO: make this configurable
-            wFlags = wFlags or sdl.WINDOWALWAYSONTOP() or sdl.WINDOWINPUTFOCUS()
+        for flag in windowFlags.values() do
+            match flag
+            | "allowhighdpi" =>
+                wFlags = wFlags or sdl.WINDOWALLOWHIGHDPI()
+            | "alwaysontop" =>
+                wFlags = wFlags or sdl.WINDOWALWAYSONTOP()
+            | "borderless" =>
+                wFlags = wFlags or sdl.WINDOWBORDERLESS()
+            | "foreign" =>
+                wFlags = wFlags or sdl.WINDOWFOREIGN()
+            | "fullscreen" =>
+                wFlags = wFlags or sdl.WINDOWFULLSCREEN()
+            | "fullscreendesktop" =>
+                wFlags = wFlags or sdl.WINDOWFULLSCREENDESKTOP()
+            | "hidden" =>
+                wFlags = wFlags or sdl.WINDOWHIDDEN()
+            | "inputfocus" =>
+                wFlags = wFlags or sdl.WINDOWINPUTFOCUS()
+            | "inputgrabbed" =>
+                wFlags = wFlags or sdl.WINDOWINPUTGRABBED()
+            | "maximized" =>
+                wFlags = wFlags or sdl.WINDOWMAXIMIZED()
+            | "minimized" =>
+                wFlags = wFlags or sdl.WINDOWMINIMIZED()
+            | "mousecapture" =>
+                wFlags = wFlags or sdl.WINDOWMOUSECAPTURE()
+            | "mousefocus" =>
+                wFlags = wFlags or sdl.WINDOWMOUSEFOCUS()
+            | "opengl" =>
+                wFlags = wFlags or sdl.WINDOWOPENGL()
+            | "popupmenu" =>
+                wFlags = wFlags or sdl.WINDOWPOPUPMENU()
+            | "resizeable" =>
+                wFlags = wFlags or sdl.WINDOWRESIZABLE()
+            | "skiptaskbar" =>
+                wFlags = wFlags or sdl.WINDOWSKIPTASKBAR()
+            | "tooltip" =>
+                wFlags = wFlags or sdl.WINDOWTOOLTIP()
+            | "utility" =>
+                wFlags = wFlags or sdl.WINDOWUTILITY()
+            | "vulkan" =>
+                wFlags = wFlags or sdl.WINDOWVULKAN()
+            end
         end
         
         window = sdl.CreateWindow(windowTitle, 100, 100, windowW, windowH, wFlags)

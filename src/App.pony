@@ -387,7 +387,7 @@ class App
                             end
                         end
                     | "api" =>
-                        Api(command.eventId, re)
+                        Api(command.eventId, ge, re, this)
                     end
                 elseif command.elseVar != "" then
                     match command.elseVar
@@ -420,7 +420,7 @@ class App
                             end
                         end
                     | "api" =>
-                        Api(command.elseVal, re)
+                        Api(command.elseVal, ge, re, this)
                     end
                 end
             end

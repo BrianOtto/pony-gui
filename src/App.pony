@@ -1,5 +1,7 @@
 use "collections"
+use "crypto"
 use "debug"
+use "time"
 
 use sdl = "sdl"
 use img = "sdl-image"
@@ -12,6 +14,8 @@ class App
     var elements: Array[RenderElement] = Array[RenderElement]
     var events: Map[String, Array[GuiEvent]] = Map[String, Array[GuiEvent]]
     
+    var cursors: Map[String, sdl.Cursor] = Map[String, sdl.Cursor]
+    
     var initSDL: U32 = 0
     var initIMG: I32 = 0
     var initTTF: U32 = 0
@@ -23,10 +27,18 @@ class App
     
     var renderer: Pointer[sdl.Renderer] = Pointer[sdl.Renderer]
     
-    var cursors: Map[String, sdl.Cursor] = Map[String, sdl.Cursor]
+    var liveMode: Bool = false
+    var liveTime: I64 = 0
+    var liveFile: String = ""
+    var liveFileHashes: Map[String, String] = Map[String, String]
     
-    new create(env: Env) =>
+    new create(env: Env, settings: Map[String, String]) ? =>
         out = env
+        
+        if settings.contains("live") then
+            liveMode = true
+            liveFile = settings("live")?
+        end
     
     fun ref init() ? =>
         // load our gui and events
@@ -159,9 +171,47 @@ class App
             
             // display everything
             sdl.RenderPresent(renderer)
+            
+            if liveMode and ((Time.seconds() - liveTime) > 1) then
+                reload(liveFile)?
+            end
         end
         
         logAndExit()?
+    
+    fun ref reload(fileName: String) ? =>
+        Debug.out("Reloading GUI ...")
+        
+        let liveFileHashesClone = liveFileHashes.clone()
+        let liveFileHashesOld = liveFileHashesClone.values()
+        
+        liveFileHashes.clear()
+        
+        Gui(this).load(fileName, true)?
+        
+        let liveFileHashesNew = liveFileHashes.values()
+        var liveFileHashesDifferent = false
+        
+        while liveFileHashesNew.has_next() do
+            let hashNew = liveFileHashesNew.next()?
+            let hashOld = try liveFileHashesOld.next()? else
+                liveFileHashesDifferent = true
+                break
+            end
+            
+            if hashNew != hashOld then
+                liveFileHashesDifferent = true
+                break
+            end
+        end
+        
+        if liveFileHashesDifferent then
+            Debug.out("Reloading Render ...")
+            
+            Render(this).load()?
+        end
+        
+        liveTime = Time.seconds()
     
     fun ref _initLibraries() ? =>
         // initialize SDL
@@ -175,7 +225,13 @@ class App
         
         // create our window
         
-        let wFlags = sdl.WINDOWSHOWN() // or sdl.WINDOWRESIZABLE()
+        var wFlags = sdl.WINDOWSHOWN() // or sdl.WINDOWRESIZABLE()
+        
+        if liveMode then
+            // TODO: make this configurable
+            wFlags = wFlags or sdl.WINDOWALWAYSONTOP() or sdl.WINDOWINPUTFOCUS()
+        end
+        
         window = sdl.CreateWindow(windowTitle, 100, 100, windowW, windowH, wFlags)
         Debug.out("window = " + window.usize().string())
         

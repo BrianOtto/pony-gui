@@ -1,4 +1,5 @@
 use "collections"
+use "crypto"
 use "debug"
 use "files"
 use "regex"
@@ -24,7 +25,17 @@ class Gui
             return // this is only here so that the compiler doesn't complain about filePath being None
         end
         
-        let file = OpenFile(filePath) as File
+        var file = OpenFile(filePath) as File
+        
+        if app.liveMode then
+            app.liveFileHashes.update(fileName, ToHexString(
+                MD5(file.read_string(file.size()))
+            ))
+            
+            file.dispose()
+            
+            file = OpenFile(filePath) as File
+        end
         
         var lineCount: I32 = 0
         let lineRegex = Regex("^((app|row|col|draw|text|load|style|event) .*)|(--.*)|($)")?
@@ -398,9 +409,11 @@ class Gui
         
         // some debugging to verify we are parsing things properly
         
-        if fileName != "layout.gui" then
+        if (fileName != "layout.gui") or (app.liveMode and (fileName != app.liveFile)) then
             return
         end
+        
+        file.dispose()
         
         let lr = app.gui.values()
                     

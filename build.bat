@@ -12,6 +12,10 @@ SET "BIN=pony-gui"
 REM The name of the application to compile
 SET "APP=demo"
 
+REM The command line parameters to use
+REM --live <filename> = The application will reload GUI changes as it runs
+SET "CMD=" REM --live ../src/gui/demo/layout.gui
+
 REM Clean up the output directory
 FOR %%i IN (%OUT%\*) DO IF NOT %%i == %OUT%\.gitignore DEL /Q %%i
 
@@ -53,7 +57,7 @@ ECHO.
 
 cd %OUT%
 
-%BIN%
+%BIN% %CMD%
 
 cd ..\
 

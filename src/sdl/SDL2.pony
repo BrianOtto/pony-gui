@@ -149,6 +149,9 @@ primitive STATERELEASED
 
 // Flags - Window
 
+primitive WINDOWALWAYSONTOP
+    fun apply(): U32 => 0x00008000
+
 primitive WINDOWBORDERLESS
     fun apply(): U32 => 0x00000010
 
@@ -162,11 +165,20 @@ primitive WINDOWFULLSCREENDESKTOP
 primitive WINDOWHIDDEN
     fun apply(): U32 => 0x00000008
 
+primitive WINDOWINPUTFOCUS
+    fun apply(): U32 => 0x00000200
+
+primitive WINDOWINPUTGRABBED
+    fun apply(): U32 => 0x00000100
+
 primitive WINDOWMAXIMIZED
     fun apply(): U32 => 0x00000080
 
 primitive WINDOWMINIMIZED
     fun apply(): U32 => 0x00000040
+
+primitive WINDOWMOUSEFOCUS
+    fun apply(): U32 => 0x00000400
 
 primitive WINDOWOPENGL
     fun apply(): U32 => 0x00000002
@@ -176,6 +188,9 @@ primitive WINDOWRESIZABLE
 
 primitive WINDOWSHOWN
     fun apply(): U32 => 0x00000004
+
+primitive WINDOWVULKAN
+    fun apply(): U32 => 0x10000000
 
 // TODO: Add the remaining window flags
 

@@ -84,6 +84,9 @@ primitive EVENTMOUSEWHEEL
 primitive EVENTQUIT
     fun apply(): U32 => 0x100
 
+primitive EVENTWINDOWEVENT
+    fun apply(): U32 => 0x200
+
 // Flags - Event Action
 
 primitive EVENTACTIONADDEVENT
@@ -213,6 +216,59 @@ primitive WINDOWUTILITY
 primitive WINDOWVULKAN
     fun apply(): U32 => 0x10000000
 
+// Flags - Window Event
+
+primitive WINDOWEVENTNONE
+    fun apply(): U8 => 0
+
+primitive WINDOWEVENTSHOWN
+    fun apply(): U8 => 1
+
+primitive WINDOWEVENTHIDDEN
+    fun apply(): U8 => 2
+
+primitive WINDOWEVENTEXPOSED
+    fun apply(): U8 => 3
+
+primitive WINDOWEVENTMOVED
+    fun apply(): U8 => 4
+
+primitive WINDOWEVENTRESIZED
+    fun apply(): U8 => 5
+
+primitive WINDOWEVENTSIZECHANGED
+    fun apply(): U8 => 6
+
+primitive WINDOWEVENTMINIMIZED
+    fun apply(): U8 => 7
+
+primitive WINDOWEVENTMAXIMIZED
+    fun apply(): U8 => 8
+
+primitive WINDOWEVENTRESTORED
+    fun apply(): U8 => 9
+
+primitive WINDOWEVENTENTER
+    fun apply(): U8 => 10
+
+primitive WINDOWEVENTLEAVE
+    fun apply(): U8 => 11
+
+primitive WINDOWEVENTFOCUSGAINED
+    fun apply(): U8 => 12
+
+primitive WINDOWEVENTFOCUSLOST
+    fun apply(): U8 => 13
+
+primitive WINDOWEVENTCLOSE
+    fun apply(): U8 => 14
+
+primitive WINDOWEVENTTAKEFOCUS
+    fun apply(): U8 => 15
+
+primitive WINDOWEVENTHITTEST
+    fun apply(): U8 => 16
+
 // Structs
 
 struct Color
@@ -285,7 +341,12 @@ struct TextInputEvent
     new create() => None
 
 struct WindowEvent
-    // TODO
+    var eventType: U32 = 0
+    var timestamp: U32 = 0
+    var windowID: U32 = 0
+    var event: U8 = 0
+    var data1: I32 = 0
+    var data2: I32 = 0
     
     new create() => None
 
@@ -388,4 +449,8 @@ primitive PollMouseButtonEvent
 
 primitive PollMouseMotionEvent
     fun apply(event: MaybePointer[MouseMotionEvent]): I32 =>
+        @SDL_PollEvent[I32](event)
+
+primitive PollWindowEvent
+    fun apply(event: MaybePointer[WindowEvent]): I32 =>
         @SDL_PollEvent[I32](event)

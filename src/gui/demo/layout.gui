@@ -1,4 +1,4 @@
-app height "720" width "1280" title "Pony GUI"
+app height "720" width "1280" title "Pony GUI" flags "resizeable"
 
 row height "1/6"
     text value "Pony GUI" id "txt-header"

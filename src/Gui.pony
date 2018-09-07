@@ -13,8 +13,8 @@ class Gui
     new create(myApp: App) =>
         app = myApp
     
-    fun ref load(fileName: String = "layout.gui", clear: Bool = false) ? =>
-        if clear then
+    fun ref load(fileName: String = "layout.gui", reload: Bool = false) ? =>
+        if reload then
             app.gui.clear()
             app.events.clear()
         end
@@ -27,7 +27,7 @@ class Gui
         
         var file = OpenFile(filePath) as File
         
-        if app.liveMode then
+        if reload then
             app.liveFileHashes.update(fileName, ToHexString(
                 MD5(file.read_string(file.size()))
             ))
@@ -79,6 +79,8 @@ class Gui
                 
                 match guiProperties(0)?
                 | "app" =>
+                    if reload then continue end
+                    
                     gp.next()?
                     
                     while gp.has_next() do

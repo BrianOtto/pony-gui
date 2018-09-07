@@ -139,6 +139,24 @@ class App
                             _runEventCommands(ge, re)?
                         end
                     end
+                | sdl.EVENTWINDOWEVENT() =>
+                    var event: sdl.WindowEvent ref = sdl.WindowEvent
+                    more = sdl.PollWindowEvent(MaybePointer[sdl.WindowEvent](event))
+                    
+                    if event.event == sdl.WINDOWEVENTRESIZED() then
+                        windowW = event.data1
+                        windowH = event.data1
+                        
+                        Debug.out("resized to " + windowW.string() + " x " + windowH.string())
+                        
+                        liveFileHashes.clear()
+                        
+                        if liveMode then
+                            reload(liveFile)?
+                        else
+                            reload("layout.gui")?
+                        end
+                    end
                 | sdl.EVENTQUIT() =>
                     more = 0
                     poll = false

@@ -69,17 +69,17 @@ class Render
             re.cursor = ge.properties("cursor")?
         end
         
-        re.events.insert("style", re.clone())?
+        re.states.insert("style", re.clone())?
         
-        let styleEvents = ge.events.values()
+        let styleStates = ge.states.values()
         
-        while styleEvents.has_next() do
-            let styleEvent = styleEvents.next()?
+        while styleStates.has_next() do
+            let styleState = styleStates.next()?
             var reForStyle = RenderElement
             
             let geNew = ge.clone()
             
-            let geProps = styleEvent.properties.pairs()
+            let geProps = styleState.properties.pairs()
             
             while geProps.has_next() do
                 var geProp = geProps.next()?
@@ -102,7 +102,7 @@ class Render
                 reForStyle.cursor = geNew.properties("cursor")?
             end
             
-            re.events.insert(styleEvent.id, reForStyle)?
+            re.states.insert(styleState.id, reForStyle)?
         end
         
         re

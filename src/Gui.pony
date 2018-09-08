@@ -192,7 +192,7 @@ class Gui
                     
                     var import = false
                     var guiElement = GuiElement
-                    var styleEvent = GuiElement
+                    var styleState = GuiElement
                     
                     while gp.has_next() do
                         let key = gp.next()?
@@ -205,9 +205,9 @@ class Gui
                                 load(value)?
                                 import = true
                                 break
-                            | "id" | "event" =>
-                                if key == "event" then
-                                    styleEvent.id = value
+                            | "id" | "state" =>
+                                if key == "state" then
+                                    styleState.id = value
                                 else
                                     for row in app.gui.values() do
                                         for col in row.cols.values() do
@@ -257,8 +257,8 @@ class Gui
                             try
                                 let propValue: String val = prop(1)?.clone().>strip("\"").>replace(placeholder, " ")
                                 
-                                if styleEvent.id != "" then
-                                    styleEvent.properties.insert(propKey, propValue)?
+                                if styleState.id != "" then
+                                    styleState.properties.insert(propKey, propValue)?
                                 else
                                     guiElement.properties.insert(propKey, propValue)?
                                 end
@@ -266,8 +266,8 @@ class Gui
                         end
                     end
                     
-                    if styleEvent.id != "" then
-                        guiElement.events.push(styleEvent)
+                    if styleState.id != "" then
+                        guiElement.states.push(styleState)
                     else
                         while required.has_next() do
                             (var rCommand, var rProperties) = required.next()?
@@ -357,7 +357,7 @@ class Gui
                             break
                         else
                             var runType: String val = ""
-                            var eventId: String val = ""
+                            var stateId: String val = ""
                             var dataVar: String val = ""
                             var dataVal: String val = ""
                             var whenVar: String val = ""
@@ -368,7 +368,7 @@ class Gui
                             match command
                             | "run" =>
                                 runType = eventCommand(1)?
-                                eventId = eventCommand(2)?
+                                stateId = eventCommand(2)?
                             | "set" =>
                                 dataVar = eventCommand(1)?
                                 dataVal = eventCommand(2)?
@@ -387,7 +387,7 @@ class Gui
                             let gec: GuiEventCommand ref = GuiEventCommand
                             gec.command = command
                             gec.runType = runType.clone().>strip("\"").>replace(placeholder, " ")
-                            gec.eventId = eventId.clone().>strip("\"").>replace(placeholder, " ")
+                            gec.stateId = stateId.clone().>strip("\"").>replace(placeholder, " ")
                             gec.dataVar = dataVar.clone().>strip("\"").>replace(placeholder, " ")
                             gec.dataVal = dataVal.clone().>strip("\"").>replace(placeholder, " ")
                             gec.whenVar = whenVar.clone().>strip("\"").>replace(placeholder, " ")
@@ -461,19 +461,19 @@ class Gui
                                 Debug.out(myProp._1 + " = " + myProp._2)
                             end
                             
-                            let lge = myElement.events.values()
+                            let lge = myElement.states.values()
                             
                             while lge.has_next() do
-                                let myGuiEvent = lge.next()?
+                                let myGuiState = lge.next()?
                                 
-                                Debug.out("\nevent id = " + myGuiEvent.id)
+                                Debug.out("\nstate id = " + myGuiState.id)
                                 
-                                let geprops = myGuiEvent.properties.pairs()
+                                let geprops = myGuiState.properties.pairs()
                     
                                 while geprops.has_next() do
-                                    let myGuiEventProp = geprops.next()?
+                                    let myGuiStateProp = geprops.next()?
                                     
-                                    Debug.out(myGuiEventProp._1 + " = " + myGuiEventProp._2)
+                                    Debug.out(myGuiStateProp._1 + " = " + myGuiStateProp._2)
                                 end
                             end
                             
@@ -511,10 +511,10 @@ class Gui
                     while lcommands.has_next() do
                         let myCommand = lcommands.next()?
                         
-                        let myCommandId = if myCommand.eventId == "" then
+                        let myCommandId = if myCommand.stateId == "" then
                             myCommand.dataVar
                         else
-                            myCommand.eventId
+                            myCommand.stateId
                         end
                         
                         Debug.out(myCommand.command + " " + myCommandId)

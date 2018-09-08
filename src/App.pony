@@ -50,7 +50,7 @@ class App
         _initLibraries()?
         
         // render our elements 
-        // and their events
+        // and their states
         Render(this).load()?
         
         // event polling
@@ -418,19 +418,19 @@ class App
                 if when then
                     match command.runType
                     | "event" =>
-                        var reEvent = RenderElement
-                        reEvent = try re.events(command.eventId)? else continue end
+                        var reState = RenderElement
+                        reState = try re.states(command.stateId)? else continue end
                         
-                        re.cursor = reEvent.cursor
-                        re.texture = reEvent.texture
-                        re.rect = reEvent.rect
+                        re.cursor = reState.cursor
+                        re.texture = reState.texture
+                        re.rect = reState.rect
                         
                         if cursors.contains(re.cursor) then
                             sdl.SetCursor(cursors(re.cursor)?)
                         end
                         
                         // run the event on all other elements
-                        if command.eventId != "style" then
+                        if command.stateId != "style" then
                             let reOther = elements.values()
                             
                             while reOther.has_next() do
@@ -438,25 +438,25 @@ class App
                                 
                                 if ro.id == re.id then continue end
                                 
-                                reEvent = try ro.events(command.eventId)? else continue end
+                                reState = try ro.states(command.stateId)? else continue end
                                 
-                                ro.cursor = reEvent.cursor
-                                ro.texture = reEvent.texture
-                                ro.rect = reEvent.rect
+                                ro.cursor = reState.cursor
+                                ro.texture = reState.texture
+                                ro.rect = reState.rect
                             end
                         end
                     | "api" =>
-                        Api(command.eventId, ge, re, this)
+                        Api(command.stateId, ge, re, this)
                     end
                 elseif command.elseVar != "" then
                     match command.elseVar
                     | "event" =>
-                        var reEvent = RenderElement
-                        reEvent = try re.events(command.elseVal)? else continue end
+                        var reState = RenderElement
+                        reState = try re.states(command.elseVal)? else continue end
                         
-                        re.cursor = reEvent.cursor
-                        re.texture = reEvent.texture
-                        re.rect = reEvent.rect
+                        re.cursor = reState.cursor
+                        re.texture = reState.texture
+                        re.rect = reState.rect
                         
                         if cursors.contains(re.cursor) then
                             sdl.SetCursor(cursors(re.cursor)?)
@@ -471,11 +471,11 @@ class App
                                 
                                 if ro.id == re.id then continue end
                                 
-                                reEvent = try ro.events(command.elseVal)? else continue end
+                                reState = try ro.states(command.elseVal)? else continue end
                                 
-                                ro.cursor = reEvent.cursor
-                                ro.texture = reEvent.texture
-                                ro.rect = reEvent.rect
+                                ro.cursor = reState.cursor
+                                ro.texture = reState.texture
+                                ro.rect = reState.rect
                             end
                         end
                     | "api" =>

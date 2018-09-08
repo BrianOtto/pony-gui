@@ -4,7 +4,7 @@ class GuiElement
     var id: String = ""
     var command: String = ""
     var properties: Map[String, String] = Map[String, String]
-    var events: Array[GuiElement] = Array[GuiElement]
+    var states: Array[GuiElement] = Array[GuiElement]
 
     new create() => None
     
@@ -14,6 +14,6 @@ class GuiElement
         ge.id = id
         ge.command = command
         ge.properties = properties
-        ge.events = events
+        ge.states = states
         
         ge

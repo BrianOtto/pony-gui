@@ -19,26 +19,26 @@ style id "img-logo"
     x "center"
     y "center"
 
-style id "img-logo" event "logo-over"
+style id "img-logo" state "logo-over"
     src "sample-over.png"
     cursor "hand"
 
-style id "img-logo" event "logo-clicked"
+style id "img-logo" state "logo-clicked"
     src "sample-clicked.png"
     cursor "arrow"
 
-style id "img-logo" event "logo-clicked-over"
+style id "img-logo" state "logo-clicked-over"
     src "sample-clicked-over.png"
     cursor "hand"
 
-style id "txt-header" event "header-clicked"
+style id "txt-header" state "header-clicked"
     value "Pony GUI is Awesome!"
 
-style id "txt-header" event "logo-clicked-over"
+style id "txt-header" state "logo-clicked-over"
     value "The logo was clicked"
 
-style id "txt-header" event "logo-over"
+style id "txt-header" state "logo-over"
     value "Pony GUI"
 
--- style id "row-header" event "resize-large"
+-- style id "row-header" state "resize-large"
 --     height "1/10"

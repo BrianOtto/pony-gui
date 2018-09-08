@@ -9,7 +9,7 @@ class RenderElement
     var callbacks: Array[{ref (): Any val}] = []
     var texture: Pointer[sdl.Texture] = Pointer[sdl.Texture]
     var rect: sdl.Rect = sdl.Rect
-    var events: Map[String, RenderElement] = Map[String, RenderElement]
+    var states: Map[String, RenderElement] = Map[String, RenderElement]
     var _data: Map[String, String] = Map[String, String]
     
     new create() => None
@@ -22,7 +22,7 @@ class RenderElement
         re.callbacks = callbacks
         re.texture = texture
         re.rect = rect
-        re.events = events
+        re.states = states
         re._data = _data
         
         re

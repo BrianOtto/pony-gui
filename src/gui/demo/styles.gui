@@ -39,3 +39,6 @@ style id "txt-header" event "logo-clicked-over"
 
 style id "txt-header" event "logo-over"
     value "Pony GUI"
+
+-- style id "row-header" event "resize-large"
+--     height "1/10"

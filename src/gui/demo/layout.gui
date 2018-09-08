@@ -1,6 +1,6 @@
 app height "720" width "1280" title "Pony GUI" flags "resizeable"
 
-row height "1/6"
+row height "1/6" id "row-header"
     text value "Pony GUI" id "txt-header"
 
 row height "4/6"

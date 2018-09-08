@@ -417,7 +417,7 @@ class App
             | "run" =>
                 if when then
                     match command.runType
-                    | "event" =>
+                    | "state" =>
                         var reState = RenderElement
                         reState = try re.states(command.stateId)? else continue end
                         
@@ -450,7 +450,7 @@ class App
                     end
                 elseif command.elseVar != "" then
                     match command.elseVar
-                    | "event" =>
+                    | "state" =>
                         var reState = RenderElement
                         reState = try re.states(command.elseVal)? else continue end
                         

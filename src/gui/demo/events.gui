@@ -1,13 +1,13 @@
 event id "img-logo" type "over"
-    run state "logo-over" when clicked "0"
-    run state "logo-clicked-over" when clicked "1"
+    run state "logo-over" when clicked eq "0"
+    run state "logo-clicked-over" when clicked eq "1"
 
 event id "img-logo" type "out"
-    run state style when clicked "0" else state "logo-clicked"
+    run state "default" when clicked eq "0" else state "logo-clicked"
 
 event id "img-logo" type "click"
-    set clicked "1" when clicked "0" else clicked "0"
-    run state "logo-over" when clicked "0" else state "logo-clicked-over"
+    set clicked "1" when clicked eq "0" else clicked "0"
+    run state "logo-over" when clicked eq "0" else state "logo-clicked-over"
 
 event id "img-logo" type "data"
     set updated "1"
@@ -16,5 +16,6 @@ event id "txt-header" type "click"
     run state "header-clicked"
     run api "myMethod"
 
--- event id "row-header" type "resize"
---     run state "resize-large" when window.height gt 1000
+event type "resize"
+    run state "resize-large"
+    set resized "1"

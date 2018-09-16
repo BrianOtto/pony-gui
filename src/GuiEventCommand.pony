@@ -5,6 +5,7 @@ class GuiEventCommand
     var dataVar: String = ""
     var dataVal: String = ""
     var whenVar: String = ""
+    var whenCon: String = ""
     var whenVal: String = ""
     var elseVar: String = ""
     var elseVal: String = ""

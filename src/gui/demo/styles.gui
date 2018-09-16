@@ -40,5 +40,12 @@ style id "txt-header" state "logo-clicked-over"
 style id "txt-header" state "logo-over"
     value "Pony GUI"
 
--- style id "row-header" state "resize-large"
---     height "1/10"
+style id "txt-header" state "resize-large"
+    value "The window was resized"
+    x "10"
+
+style id "row-header" state "resize-large"
+    height "1/12"
+
+style id "row-logo" state "resize-large"
+    height "6/12"

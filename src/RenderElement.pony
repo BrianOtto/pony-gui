@@ -3,8 +3,9 @@ use "debug"
 
 use sdl = "sdl"
 
-class RenderElement
+class RenderElement is ICanRunCommands
     var id: String = ""
+    var ge: GuiElement = GuiElement
     var cursor: String = "arrow"
     var callbacks: Array[{ref (): Any val}] = []
     var texture: Pointer[sdl.Texture] = Pointer[sdl.Texture]
@@ -18,14 +19,18 @@ class RenderElement
         let re = RenderElement
         
         re.id = id
+        re.ge = ge.clone()
         re.cursor = cursor
-        re.callbacks = callbacks
+        re.callbacks = callbacks.clone()
         re.texture = texture
         re.rect = rect
-        re.states = states
-        re._data = _data
+        re.states = states.clone()
+        re._data = _data.clone()
         
         re
+    
+    fun ref getId(): String =>
+        id
     
     fun ref getData(): Map[String, String] =>
         _data

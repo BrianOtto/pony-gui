@@ -46,6 +46,73 @@ class Render
             hTotal = hTotal + h
         end
     
+    fun ref recalc(id: String) ? =>
+        var hTotal: I32 = 0
+        var wTotal: I32 = 0
+        
+        let guiRows = app.gui.values()
+        
+        while guiRows.has_next() do
+            let guiRow = guiRows.next()?
+            let guiCols = guiRow.cols.values()
+            
+            var guiRowHeight = guiRow.height
+            
+            if guiRow.states.contains(id) then
+                let guiRowState = try guiRow.states(id)? else error end
+                guiRowHeight = guiRowState.height
+            end
+            
+            let h: I32 = (app.windowH.f32() * guiRowHeight).i32()
+            
+            wTotal = 0
+            
+            while guiCols.has_next() do
+                let guiCol = guiCols.next()?
+                let guiElements = guiCol.elements.values()
+                
+                var guiColWidth = guiCol.width
+                
+                if guiCol.states.contains(id) then
+                    let guiColState = try guiCol.states(id)? else error end
+                    guiColWidth = guiColState.width
+                end
+                
+                let w: I32 = (app.windowW.f32() * guiColWidth).i32()
+                
+                while guiElements.has_next() do
+                    let ge = guiElements.next()?
+                    let reElements = app.elements.values()
+                    
+                    while reElements.has_next() do
+                        let re = reElements.next()?
+                        
+                        if re.id == ge.id then
+                            if ge.command == "draw" then
+                                var reNew = render(ge, w, h, wTotal, hTotal)?
+                                
+                                re.callbacks = reNew.callbacks
+                                re.states = reNew.states
+                            else
+                                re.rect = _getRect(re.texture, re.ge, w, h, wTotal, hTotal)?
+                                
+                                let reStates = re.states.values()
+                        
+                                while reStates.has_next() do
+                                    let reState = reStates.next()?
+                                    reState.rect = _getRect(reState.texture, reState.ge, w, h, wTotal, hTotal)?
+                                end
+                            end
+                        end
+                    end
+                end
+                
+                wTotal = wTotal + w
+            end
+            
+            hTotal = hTotal + h
+        end
+    
     fun ref render(ge: GuiElement, w: I32, h: I32, wTotal: I32, hTotal: I32): RenderElement ? =>
         var re = RenderElement
         
@@ -69,7 +136,8 @@ class Render
             re.cursor = ge.properties("cursor")?
         end
         
-        re.states.insert("style", re.clone())?
+        re.ge = ge
+        re.states.insert("default", re.clone())?
         
         let styleStates = ge.states.values()
         
@@ -102,6 +170,7 @@ class Render
                 reForStyle.cursor = geNew.properties("cursor")?
             end
             
+            reForStyle.ge = geNew
             re.states.insert(styleState.id, reForStyle)?
         end
         
@@ -119,6 +188,7 @@ class Render
         if ge.properties.contains("x") then
             let geX = ge.properties("x")?
             
+            // TODO: add support for left / right
             if geX == "center" then
                 x = wTotal + ((w - (radius * 2)) / 2) + radius
             else
@@ -129,6 +199,7 @@ class Render
         if ge.properties.contains("y") then
             let geY = ge.properties("y")?
             
+            // TODO: add support for top / bottom
             if geY == "center" then
                 y = hTotal + ((h - (radius * 2)) / 2) + radius
             else
@@ -276,6 +347,7 @@ class Render
         if guiElement.properties.contains("x") then
             let guiElementX = guiElement.properties("x")?
             
+            // TODO: add support for left / right
             if guiElementX == "center" then
                 rect.w = if rect.w > w then w else rect.w end
                 rect.x = wTotal + ((w - rect.w) / 2)
@@ -287,6 +359,7 @@ class Render
         if guiElement.properties.contains("y") then
             let guiElementY = guiElement.properties("y")?
             
+            // TODO: add support for top / bottom
             if guiElementY == "center" then
                 rect.h = if rect.h > h then h else rect.h end
                 rect.y = hTotal + ((h - rect.h) / 2)

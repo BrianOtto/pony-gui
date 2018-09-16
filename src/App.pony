@@ -33,6 +33,8 @@ class App
     var liveFile: String = ""
     var liveFileHashes: Map[String, String] = Map[String, String]
     
+    var state: AppState = AppState
+    
     new create(env: Env, settings: Map[String, String]) ? =>
         out = env
         
@@ -145,16 +147,18 @@ class App
                     
                     if event.event == sdl.WINDOWEVENTRESIZED() then
                         windowW = event.data1
-                        windowH = event.data1
+                        windowH = event.data2
                         
                         Debug.out("resized to " + windowW.string() + " x " + windowH.string())
                         
-                        liveFileHashes.clear()
-                        
-                        if liveMode then
-                            reload(liveFile)?
-                        else
-                            reload("layout.gui")?
+                        if events.contains("resize") then
+                            let guiEvents = events("resize")?.values()
+                            
+                            while guiEvents.has_next() do
+                                let ge = guiEvents.next()?
+                                
+                                _runEventCommands(ge, state)?
+                            end
                         end
                     end
                 | sdl.EVENTQUIT() =>
@@ -369,7 +373,7 @@ class App
         
         elementsByEvent
     
-    fun ref _runEventCommands(ge: GuiEvent, re: RenderElement, setData: Bool = false) ? =>
+    fun ref _runEventCommands(ge: GuiEvent, re: CanRunCommands, setData: Bool = false) ? =>
         let commands = ge.commands.values()
         
         while commands.has_next() do
@@ -385,8 +389,31 @@ class App
                     re.setDataValue(command.whenVar, "0")
                 end
                 
-                if re.getDataValue(command.whenVar)? == command.whenVal then
-                    when = true
+                match command.whenCon
+                | "eq" =>
+                    if re.getDataValue(command.whenVar)? == command.whenVal then
+                        when = true
+                    end
+                | "ne" =>
+                    if re.getDataValue(command.whenVar)? != command.whenVal then
+                        when = true
+                    end
+                | "ge" =>
+                    if re.getDataValue(command.whenVar)? >= command.whenVal then
+                        when = true
+                    end
+                | "le" =>
+                    if re.getDataValue(command.whenVar)? <= command.whenVal then
+                        when = true
+                    end
+                | "gt" =>
+                    if re.getDataValue(command.whenVar)? > command.whenVal then
+                        when = true
+                    end
+                | "lt" =>
+                    if re.getDataValue(command.whenVar)? < command.whenVal then
+                        when = true
+                    end
                 end
             end
             
@@ -407,7 +434,7 @@ class App
                     while reEvents.has_next() do
                         (let geSet, let reSet) = reEvents.next()?
 
-                        if (re.id == reSet.id) then
+                        if (re.getId() == reSet.getId()) then
                             Debug.out("data")
 
                             _runEventCommands(geSet, reSet, true)?
@@ -415,73 +442,108 @@ class App
                     end
                 end
             | "run" =>
+                var runId = ""
+                var runType = ""
+                
                 if when then
-                    match command.runType
-                    | "state" =>
-                        var reState = RenderElement
-                        reState = try re.states(command.stateId)? else continue end
-                        
-                        re.cursor = reState.cursor
-                        re.texture = reState.texture
-                        re.rect = reState.rect
-                        
-                        if cursors.contains(re.cursor) then
-                            sdl.SetCursor(cursors(re.cursor)?)
-                        end
-                        
-                        // run the event on all other elements
-                        if command.stateId != "style" then
-                            let reOther = elements.values()
-                            
-                            while reOther.has_next() do
-                                let ro = reOther.next()?
-                                
-                                if ro.id == re.id then continue end
-                                
-                                reState = try ro.states(command.stateId)? else continue end
-                                
-                                ro.cursor = reState.cursor
-                                ro.texture = reState.texture
-                                ro.rect = reState.rect
-                            end
-                        end
-                    | "api" =>
-                        Api(command.stateId, ge, re, this)
-                    end
+                    runId = command.stateId
+                    runType = command.runType
                 elseif command.elseVar != "" then
-                    match command.elseVar
+                    runId = command.elseVal
+                    runType = command.elseVar
+                end
+                
+                if runId != "" then
+                    match runType
                     | "state" =>
-                        var reState = RenderElement
-                        reState = try re.states(command.elseVal)? else continue end
-                        
-                        re.cursor = reState.cursor
-                        re.texture = reState.texture
-                        re.rect = reState.rect
-                        
-                        if cursors.contains(re.cursor) then
-                            sdl.SetCursor(cursors(re.cursor)?)
-                        end
-                        
-                        // run the event on all other elements
-                        if command.elseVal != "style" then
-                            let reOther = elements.values()
-                            
-                            while reOther.has_next() do
-                                let ro = reOther.next()?
-                                
-                                if ro.id == re.id then continue end
-                                
-                                reState = try ro.states(command.elseVal)? else continue end
-                                
-                                ro.cursor = reState.cursor
-                                ro.texture = reState.texture
-                                ro.rect = reState.rect
-                            end
+                        match re
+                        | let reType: AppState =>
+                            try _runEventStateForApp(runId)? else continue end
+                        | let reType: RenderElement =>
+                            let el = re as RenderElement
+                            try _runEventStateForElement(runId, el)? else continue end
                         end
                     | "api" =>
-                        Api(command.elseVal, ge, re, this)
+                        Api(runId, ge, re, this)
                     end
                 end
+            end
+        end
+    
+    fun ref _runEventStateForApp(id: String) ? =>
+        // TODO: cleanup this code
+        // determine recalc in a better way
+        // run _runEventStateForElement instead of the reOther loop
+        // get the "resize-large" state to only run when window.height > 1000
+        // get the "resize-large" state to run on element events like mouse clicks
+        // add the ability to hide / show rows and cols
+        
+        var recalc = false
+        
+        let rows = gui.values()
+            
+        while rows.has_next() do
+            let row = rows.next()?
+            
+            if row.states.contains(id) then
+                recalc = true
+                break
+            end
+            
+            let cols = row.cols.values()
+            
+            while cols.has_next() do
+                let col = cols.next()?
+                
+                if col.states.contains(id) then
+                    recalc = true
+                    break
+                end
+            end
+        end
+        
+        if recalc then
+            Render(this).recalc(id)?
+        end
+        
+        let reOther = elements.values()
+            
+        while reOther.has_next() do
+            let ro = reOther.next()?
+            
+            var reState = try ro.states(id)? else continue end
+            
+            ro.cursor = reState.cursor
+            ro.texture = reState.texture
+            ro.rect = reState.rect
+        end
+    
+    fun ref _runEventStateForElement(id: String, re: RenderElement) ? =>
+        var reState = RenderElement
+        reState = try re.states(id)? else error end
+        
+        re.cursor = reState.cursor
+        re.texture = reState.texture
+        re.rect = reState.rect
+        
+        if cursors.contains(re.cursor) then
+            sdl.SetCursor(cursors(re.cursor)?)
+        end
+        
+        // run the event on all other elements
+        if id != "default" then
+            let reOther = elements.values()
+            
+            while reOther.has_next() do
+                let ro = reOther.next()?
+                
+                if ro.id == re.id then continue end
+                
+                reState = try ro.states(id)? else continue end
+                
+                ro.cursor = reState.cursor
+                ro.texture = reState.texture
+                ro.rect = reState.rect
             end
         end
     

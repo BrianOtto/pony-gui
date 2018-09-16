@@ -1,0 +1,1 @@
+type CanRunCommands is (AppState | RenderElement)

@@ -116,6 +116,7 @@ class Gui
                             | "id" =>
                                 guiRow.id = value
                             | "height" =>
+                                // TODO: allow pixel values (i.e. they will not have the "/")
                                 let height = value.split_by("/")
                                 guiRow.height = height(0)?.f32() / height(1)?.f32()
                             end
@@ -150,6 +151,7 @@ class Gui
                             | "id" =>
                                 guiCol.id = value
                             | "width" =>
+                                // TODO: allow pixel values (i.e. they will not have the "/")
                                 let width = value.split_by("/")
                                 guiCol.width = width(0)?.f32() / width(1)?.f32()
                             end
@@ -191,8 +193,14 @@ class Gui
                     gp.next()?
                     
                     var import = false
+                    
+                    var guiRow = GuiRow
+                    var guiCol = GuiCol
                     var guiElement = GuiElement
-                    var styleState = GuiElement
+                    
+                    var guiRowState = GuiRow
+                    var guiColState = GuiCol
+                    var guiElementState = GuiElement
                     
                     while gp.has_next() do
                         let key = gp.next()?
@@ -207,10 +215,22 @@ class Gui
                                 break
                             | "id" | "state" =>
                                 if key == "state" then
-                                    styleState.id = value
+                                    guiRowState.id = value
+                                    guiColState.id = value
+                                    guiElementState.id = value
                                 else
                                     for row in app.gui.values() do
+                                        if row.id == value then
+                                            guiRow = row
+                                            break
+                                        end
+                                        
                                         for col in row.cols.values() do
+                                            if col.id == value then
+                                                guiCol = col
+                                                break
+                                            end
+                                            
                                             for element in col.elements.values() do
                                                 if element.id == value then
                                                     guiElement = element
@@ -218,7 +238,7 @@ class Gui
                                                 end
                                             end
                                             
-                                            if guiElement.id != "" then
+                                            if (guiCol.id != "") or (guiElement.id != "") then
                                                 break
                                             end
                                         end
@@ -232,7 +252,9 @@ class Gui
                         end
                     end
                     
-                    if import then continue elseif guiElement.id == "" then
+                    if import then
+                        continue
+                    elseif (guiRow.id == "") and (guiCol.id == "") and (guiElement.id == "") then
                         app.logAndExit("The style command has a missing or invalid \"id\" property.", false)?
                     end
                     
@@ -257,8 +279,18 @@ class Gui
                             try
                                 let propValue: String val = prop(1)?.clone().>strip("\"").>replace(placeholder, " ")
                                 
-                                if styleState.id != "" then
-                                    styleState.properties.insert(propKey, propValue)?
+                                if guiRow.id != "" then
+                                    if propKey == "height" then
+                                        let pvHeight = propValue.split_by("/")
+                                        guiRowState.height = pvHeight(0)?.f32() / pvHeight(1)?.f32()
+                                    end
+                                elseif guiCol.id != "" then
+                                    if propKey == "width" then
+                                        let pvWidth = propValue.split_by("/")
+                                        guiColState.width = pvWidth(0)?.f32() / pvWidth(1)?.f32()
+                                    end
+                                elseif guiElementState.id != "" then
+                                    guiElementState.properties.insert(propKey, propValue)?
                                 else
                                     guiElement.properties.insert(propKey, propValue)?
                                 end
@@ -266,8 +298,12 @@ class Gui
                         end
                     end
                     
-                    if styleState.id != "" then
-                        guiElement.states.push(styleState)
+                    if guiRow.id != "" then
+                        guiRow.states.insert(guiRowState.id, guiRowState)?
+                    elseif guiCol.id != "" then
+                        guiCol.states.insert(guiColState.id, guiColState)?
+                    elseif guiElementState.id != "" then
+                        guiElement.states.insert(guiElementState.id, guiElementState)?
                     else
                         while required.has_next() do
                             (var rCommand, var rProperties) = required.next()?
@@ -307,7 +343,17 @@ class Gui
                                 break
                             | "id" =>
                                 for row in app.gui.values() do
+                                    if row.id == value then
+                                        guiEvent.id = row.id
+                                        break
+                                    end
+                                    
                                     for col in row.cols.values() do
+                                        if col.id == value then
+                                            guiEvent.id = col.id
+                                            break
+                                        end
+                                        
                                         for element in col.elements.values() do
                                             if element.id == value then
                                                 guiEvent.id = element.id
@@ -330,7 +376,7 @@ class Gui
                         end
                     end
                     
-                    if import then continue elseif guiEvent.id == "" then
+                    if import then continue elseif (guiEvent.id == "") and (guiEvent.eventType != "resize") then
                         app.logAndExit("The event command has a missing or invalid \"id\" property.", false)?
                     end
                     
@@ -361,6 +407,7 @@ class Gui
                             var dataVar: String val = ""
                             var dataVal: String val = ""
                             var whenVar: String val = ""
+                            var whenCon: String val = ""
                             var whenVal: String val = ""
                             var elseVar: String val = ""
                             var elseVal: String val = ""
@@ -375,12 +422,15 @@ class Gui
                             end
                             
                             whenVar = try eventCommand(4)? else "" end
-                            whenVal = try eventCommand(5)? else
+                            whenCon = try eventCommand(5)? else
+                                if whenVar == "" then "" else error end
+                            end
+                            whenVal = try eventCommand(6)? else
                                 if whenVar == "" then "" else error end
                             end
                             
-                            elseVar = try eventCommand(7)? else "" end
-                            elseVal = try eventCommand(8)? else
+                            elseVar = try eventCommand(8)? else "" end
+                            elseVal = try eventCommand(9)? else
                                 if elseVar == "" then "" else error end
                             end
                             
@@ -391,6 +441,7 @@ class Gui
                             gec.dataVar = dataVar.clone().>strip("\"").>replace(placeholder, " ")
                             gec.dataVal = dataVal.clone().>strip("\"").>replace(placeholder, " ")
                             gec.whenVar = whenVar.clone().>strip("\"").>replace(placeholder, " ")
+                            gec.whenCon = whenCon.clone().>strip("\"").>replace(placeholder, " ")
                             gec.whenVal = whenVal.clone().>strip("\"").>replace(placeholder, " ")
                             gec.elseVar = elseVar.clone().>strip("\"").>replace(placeholder, " ")
                             gec.elseVal = elseVal.clone().>strip("\"").>replace(placeholder, " ")

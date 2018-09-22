@@ -474,8 +474,9 @@ class App
         // TODO: cleanup this code
         // determine recalc in a better way
         // run _runEventStateForElement instead of the reOther loop
-        // get the "resize-large" state to only run when window.height > 1000
+        // get the "resize-large" state to only run when app.system.window.height > 1000
         // get the "resize-large" state to run on element events like mouse clicks
+        // add the ability to specify variables in other elements, e.g. when app.gui.<id>.x > 10
         // add the ability to hide / show rows and cols
         
         var recalc = false
@@ -512,10 +513,13 @@ class App
             let ro = reOther.next()?
             
             var reState = try ro.states(id)? else continue end
+            var persist = try reState.ge.properties("persist")? else continue end
             
-            ro.cursor = reState.cursor
-            ro.texture = reState.texture
-            ro.rect = reState.rect
+            if persist == "1" then
+                Render(this).recalc(ro.id, reState)?
+            else
+                reState.clone(ro)
+            end 
         end
     
     fun ref _runEventStateForElement(id: String, re: RenderElement) ? =>
@@ -540,10 +544,13 @@ class App
                 if ro.id == re.id then continue end
                 
                 reState = try ro.states(id)? else continue end
+                var persist = try reState.ge.properties("persist")? else continue end
                 
-                ro.cursor = reState.cursor
-                ro.texture = reState.texture
-                ro.rect = reState.rect
+                if persist == "1" then
+                    Render(this).recalc(ro.id, reState)?
+                else
+                    reState.clone(ro)
+                end
             end
         end
     

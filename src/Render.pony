@@ -46,7 +46,7 @@ class Render
             hTotal = hTotal + h
         end
     
-    fun ref recalc(id: String) ? =>
+    fun ref recalc(id: String, reRender: RenderElement = RenderElement) ? =>
         var hTotal: I32 = 0
         var wTotal: I32 = 0
         
@@ -58,7 +58,7 @@ class Render
             
             var guiRowHeight = guiRow.height
             
-            if guiRow.states.contains(id) then
+            if (reRender.id == "") and guiRow.states.contains(id) then
                 let guiRowState = try guiRow.states(id)? else error end
                 guiRowHeight = guiRowState.height
             end
@@ -73,7 +73,7 @@ class Render
                 
                 var guiColWidth = guiCol.width
                 
-                if guiCol.states.contains(id) then
+                if (reRender.id == "") and guiCol.states.contains(id) then
                     let guiColState = try guiCol.states(id)? else error end
                     guiColWidth = guiColState.width
                 end
@@ -88,20 +88,41 @@ class Render
                         let re = reElements.next()?
                         
                         if re.id == ge.id then
-                            if ge.command == "draw" then
-                                var reNew = render(ge, w, h, wTotal, hTotal)?
-                                
-                                re.callbacks = reNew.callbacks
-                                re.states = reNew.states
-                            else
-                                re.rect = _getRect(re.texture, re.ge, w, h, wTotal, hTotal)?
-                                
-                                let reStates = re.states.values()
-                        
-                                while reStates.has_next() do
-                                    let reState = reStates.next()?
-                                    reState.rect = _getRect(reState.texture, reState.ge, w, h, wTotal, hTotal)?
+                            if reRender.id == "" then
+                                if ge.command == "draw" then
+                                    var reNew = render(ge, w, h, wTotal, hTotal)?
+                                    
+                                    re.callbacks = reNew.callbacks
+                                    re.states = reNew.states
+                                else
+                                    re.rect = _getRect(re.texture, re.ge, w, h, wTotal, hTotal)?
+                                    
+                                    let reStates = re.states.values()
+                            
+                                    while reStates.has_next() do
+                                        let reState = reStates.next()?
+                                        reState.rect = _getRect(reState.texture, reState.ge, w, h, wTotal, hTotal)?
+                                    end
                                 end
+                            elseif re.id == id then
+                                // get the properties the state was originally rendered with
+                                let geProps = reRender.geState.properties.pairs()
+                                
+                                // and make them permanent by merging them with the GUI element
+                                while geProps.has_next() do
+                                    var geProp = geProps.next()?
+                                    ge.properties.update(geProp._1, geProp._2)
+                                end
+                                
+                                // get the previous state id that was being displayed
+                                var rePrevId = re.geState.id
+                                
+                                // re-render all the GUI element states with these new properties
+                                let reNew = render(ge, w, h, wTotal, hTotal)?
+                                reNew.clone(re, true)
+                                
+                                // go back to displaying the previous state
+                                re.states(rePrevId)?.clone(re)
                             end
                         end
                     end
@@ -112,7 +133,7 @@ class Render
             
             hTotal = hTotal + h
         end
-    
+        
     fun ref render(ge: GuiElement, w: I32, h: I32, wTotal: I32, hTotal: I32): RenderElement ? =>
         var re = RenderElement
         
@@ -137,7 +158,10 @@ class Render
         end
         
         re.ge = ge
-        re.states.insert("default", re.clone())?
+        re.geState = ge.clone()
+        re.geState.id = "default"
+        
+        re.states.insert(re.geState.id, re.clone())?
         
         let styleStates = ge.states.values()
         
@@ -171,7 +195,9 @@ class Render
             end
             
             reForStyle.ge = geNew
-            re.states.insert(styleState.id, reForStyle)?
+            reForStyle.geState = styleState
+            
+            re.states.insert(reForStyle.geState.id, reForStyle)?
         end
         
         re

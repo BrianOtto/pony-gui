@@ -6,6 +6,7 @@ use sdl = "sdl"
 class RenderElement is ICanRunCommands
     var id: String = ""
     var ge: GuiElement = GuiElement
+    var geState: GuiElement = GuiElement
     var cursor: String = "arrow"
     var callbacks: Array[{ref (): Any val}] = []
     var texture: Pointer[sdl.Texture] = Pointer[sdl.Texture]
@@ -15,17 +16,22 @@ class RenderElement is ICanRunCommands
     
     new create() => None
     
-    fun ref clone(): RenderElement =>
-        let re = RenderElement
-        
+    fun ref clone(re: RenderElement = RenderElement, cloneStates: Bool = false): RenderElement =>
         re.id = id
         re.ge = ge.clone()
+        re.geState = geState.clone()
         re.cursor = cursor
-        re.callbacks = callbacks.clone()
         re.texture = texture
         re.rect = rect
-        re.states = states.clone()
-        re._data = _data.clone()
+        
+        if cloneStates then
+            re.callbacks = callbacks.clone()
+            re.states = states.clone()
+        end
+        
+        // this is shared among all states 
+        // and should not be cloned
+        re._data = _data
         
         re
     

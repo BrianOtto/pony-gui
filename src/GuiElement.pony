@@ -8,12 +8,13 @@ class GuiElement
 
     new create() => None
     
-    fun ref clone(): GuiElement =>
-        let ge = GuiElement
-        
+    fun ref clone(ge: GuiElement = GuiElement, cloneStates: Bool = false): GuiElement =>
         ge.id = id
         ge.command = command
         ge.properties = properties.clone()
-        ge.states = states.clone()
+        
+        if cloneStates then
+            ge.states = states.clone()
+        end
         
         ge

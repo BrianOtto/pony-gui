@@ -193,6 +193,7 @@ class Gui
                     gp.next()?
                     
                     var import = false
+                    var persist = "0"
                     
                     var guiRow = GuiRow
                     var guiCol = GuiCol
@@ -213,6 +214,8 @@ class Gui
                                 load(value)?
                                 import = true
                                 break
+                            | "persist" =>
+                                persist = "1"
                             | "id" | "state" =>
                                 if key == "state" then
                                     guiRowState.id = value
@@ -257,6 +260,8 @@ class Gui
                     elseif (guiRow.id == "") and (guiCol.id == "") and (guiElement.id == "") then
                         app.logAndExit("The style command has a missing or invalid \"id\" property.", false)?
                     end
+                    
+                    guiElementState.properties.insert("persist", persist)?
                     
                     while lines.has_next() do
                         line = lines.next().clone().>strip()

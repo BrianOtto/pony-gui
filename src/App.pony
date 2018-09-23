@@ -383,6 +383,9 @@ class App
             if command.whenVar == "" then
                 when = true
             else
+                // TODO: look into allowing the ability to specify variables in other elements
+                //  e.g. when "app.gui.<id>.x" gt 10
+                
                 if not re.getData().contains(command.whenVar) then
                     // we are just initializing an empty var and
                     // so the data event doesn't need to be run
@@ -471,14 +474,12 @@ class App
         end
     
     fun ref _runEventStateForApp(id: String) ? =>
-        // TODO: cleanup this code
-        // determine recalc in a better way
-        // run _runEventStateForElement instead of the reOther loop
-        // get the "resize-large" state to only run when app.system.window.height > 1000
-        // get the "resize-large" state to run on element events like mouse clicks
-        // add the ability to specify variables in other elements, e.g. when app.gui.<id>.x > 10
-        // add the ability to hide / show rows and cols
+        // TODO: get the "resize-large" state to only run when app.system.window.height > 1000
+        // TODO: get the "resize-large" state to run on element events like mouse clicks
+        // TODO: add the ability to hide / show rows and cols
         
+        // check if the row / col states have changed, 
+        // as this requires all element rects to be recalculated
         var recalc = false
         
         let rows = gui.values()
@@ -501,56 +502,55 @@ class App
                     break
                 end
             end
+            
+            if recalc == true then break end
         end
         
         if recalc then
             Render(this).recalc(id)?
         end
         
-        let reOther = elements.values()
-            
-        while reOther.has_next() do
-            let ro = reOther.next()?
-            
-            var reState = try ro.states(id)? else continue end
-            var persist = try reState.ge.properties("persist")? else continue end
-            
-            if persist == "1" then
-                Render(this).recalc(ro.id, reState)?
-            else
-                reState.clone(ro)
-            end 
-        end
+        _runEventStateForElements(id)?
     
     fun ref _runEventStateForElement(id: String, re: RenderElement) ? =>
-        var reState = RenderElement
-        reState = try re.states(id)? else error end
-        
-        re.cursor = reState.cursor
-        re.texture = reState.texture
-        re.rect = reState.rect
+        // change the state of the current element
+        let reState = try re.states(id)? else error end
+        let persist = try reState.ge.properties("persist")? else "0" end
+                
+        if persist == "1" then
+            Render(this).recalc(re.id, reState)?
+        else
+            // TODO: look into why I can't run the following: reState.clone(re)
+            // there might be a bug with clone() that is not appearing elsewhere yet
+            re.cursor = reState.cursor
+            re.texture = reState.texture
+            re.rect = reState.rect
+        end
         
         if cursors.contains(re.cursor) then
             sdl.SetCursor(cursors(re.cursor)?)
         end
         
-        // run the event on all other elements
+        // change the state of all other elements
         if id != "default" then
-            let reOther = elements.values()
+            _runEventStateForElements(id, re.id)?
+        end
+    
+    fun ref _runEventStateForElements(id: String, reIdToIgnore: String = "") ? =>
+        let renderElements = elements.values()
+        
+        while renderElements.has_next() do
+            let re = renderElements.next()?
             
-            while reOther.has_next() do
-                let ro = reOther.next()?
-                
-                if ro.id == re.id then continue end
-                
-                reState = try ro.states(id)? else continue end
-                var persist = try reState.ge.properties("persist")? else continue end
-                
-                if persist == "1" then
-                    Render(this).recalc(ro.id, reState)?
-                else
-                    reState.clone(ro)
-                end
+            if (reIdToIgnore != "") and (re.id == reIdToIgnore) then continue end
+            
+            let reState = try re.states(id)? else continue end
+            let persist = try reState.ge.properties("persist")? else "0" end
+            
+            if persist == "1" then
+                Render(this).recalc(re.id, reState)?
+            else
+                reState.clone(re)
             end
         end
     

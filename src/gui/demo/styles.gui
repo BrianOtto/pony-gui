@@ -51,3 +51,9 @@ style id "row-logo" state "resize-large"
 
 style id "txt-header" state "resize-move" persist "1"
     x "10"
+
+style id "row-header" state "resize-small"
+    height "2/12"
+
+style id "row-logo" state "resize-small"
+    height "8/12"

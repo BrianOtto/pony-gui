@@ -386,37 +386,61 @@ class App
                 // TODO: look into allowing the ability to specify variables in other elements
                 //  e.g. when "app.gui.<id>.x" gt 10
                 
-                if not re.getData().contains(command.whenVar) then
-                    // we are just initializing an empty var and
-                    // so the data event doesn't need to be run
-                    re.setDataValue(command.whenVar, "0")
-                end
+                let whenVarParts: Array[String] = command.whenVar.split_by(".")
+                var whenVarValue: String = ""
                 
-                match command.whenCon
-                | "eq" =>
-                    if re.getDataValue(command.whenVar)? == command.whenVal then
-                        when = true
+                try
+                    if whenVarParts(0)? == "app" then
+                        match whenVarParts(1)?
+                        | "system" =>
+                            match whenVarParts(2)?
+                            | "window" =>
+                                match whenVarParts(3)?
+                                | "width" =>
+                                    whenVarValue = windowW.string()
+                                | "height" =>
+                                    whenVarValue = windowH.string()
+                                end
+                            end
+                        end
+                    else
+                        if not re.getData().contains(command.whenVar) then
+                            // we are just initializing an empty var and
+                            // so the data event doesn't need to be run
+                            re.setDataValue(command.whenVar, "0")
+                        end
+                        
+                        whenVarValue = re.getDataValue(command.whenVar)?
                     end
-                | "ne" =>
-                    if re.getDataValue(command.whenVar)? != command.whenVal then
-                        when = true
+                    
+                    match command.whenCon
+                    | "eq" =>
+                        if whenVarValue == command.whenVal then
+                            when = true
+                        end
+                    | "ne" =>
+                        if whenVarValue != command.whenVal then
+                            when = true
+                        end
+                    | "ge" =>
+                        if whenVarValue.u64()? >= command.whenVal.u64()? then
+                            when = true
+                        end
+                    | "le" =>
+                        if whenVarValue.u64()? <= command.whenVal.u64()? then
+                            when = true
+                        end
+                    | "gt" =>
+                        if whenVarValue.u64()? > command.whenVal.u64()? then
+                            when = true
+                        end
+                    | "lt" =>
+                        if whenVarValue.u64()? < command.whenVal.u64()? then
+                            when = true
+                        end
                     end
-                | "ge" =>
-                    if re.getDataValue(command.whenVar)? >= command.whenVal then
-                        when = true
-                    end
-                | "le" =>
-                    if re.getDataValue(command.whenVar)? <= command.whenVal then
-                        when = true
-                    end
-                | "gt" =>
-                    if re.getDataValue(command.whenVar)? > command.whenVal then
-                        when = true
-                    end
-                | "lt" =>
-                    if re.getDataValue(command.whenVar)? < command.whenVal then
-                        when = true
-                    end
+                else
+                    continue
                 end
             end
             
@@ -474,7 +498,6 @@ class App
         end
     
     fun ref _runEventStateForApp(id: String) ? =>
-        // TODO: get the "resize-large" state to only run when app.system.window.height > 1000
         // TODO: get the "resize-large" state to run on element events like mouse clicks
         // TODO: add the ability to hide / show rows and cols
         
@@ -510,7 +533,9 @@ class App
             Render(this).recalc(id)?
         end
         
-        _runEventStateForElements(id)?
+        if id != "default" then
+            _runEventStateForElements(id)?
+        end
     
     fun ref _runEventStateForElement(id: String, re: RenderElement) ? =>
         // change the state of the current element

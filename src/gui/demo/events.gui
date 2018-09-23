@@ -17,6 +17,6 @@ event id "txt-header" type "click"
     run api "myMethod"
 
 event type "resize"
-    run state "resize-large"
-    set resized "1"
+    run state "resize-large" when app.system.window.width gt "1600" else state "resize-small"
     run state "resize-move"
+    set resized "1"

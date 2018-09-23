@@ -483,13 +483,7 @@ class App
                 if runId != "" then
                     match runType
                     | "state" =>
-                        match re
-                        | let reType: AppState =>
-                            try _runEventStateForApp(runId)? else continue end
-                        | let reType: RenderElement =>
-                            let el = re as RenderElement
-                            try _runEventStateForElement(runId, el)? else continue end
-                        end
+                        try _runEventState(runId, re)? else continue end
                     | "api" =>
                         Api(runId, ge, re, this)
                     end
@@ -497,8 +491,7 @@ class App
             end
         end
     
-    fun ref _runEventStateForApp(id: String) ? =>
-        // TODO: get the "resize-large" state to run on element events like mouse clicks
+    fun ref _runEventState(id: String, rc: CanRunCommands) ? =>
         // TODO: add the ability to hide / show rows and cols
         
         // check if the row / col states have changed, 
@@ -533,49 +526,34 @@ class App
             Render(this).recalc(id)?
         end
         
-        if id != "default" then
-            _runEventStateForElements(id)?
-        end
+        _runEventStateForElements(id, rc)?
     
-    fun ref _runEventStateForElement(id: String, re: RenderElement) ? =>
-        // change the state of the current element
-        let reState = try re.states(id)? else error end
-        let persist = try reState.ge.properties("persist")? else "0" end
-                
-        if persist == "1" then
-            Render(this).recalc(re.id, reState)?
-        else
-            // TODO: look into why I can't run the following: reState.clone(re)
-            // there might be a bug with clone() that is not appearing elsewhere yet
-            re.cursor = reState.cursor
-            re.texture = reState.texture
-            re.rect = reState.rect
-        end
-        
-        if cursors.contains(re.cursor) then
-            sdl.SetCursor(cursors(re.cursor)?)
-        end
-        
-        // change the state of all other elements
-        if id != "default" then
-            _runEventStateForElements(id, re.id)?
-        end
-    
-    fun ref _runEventStateForElements(id: String, reIdToIgnore: String = "") ? =>
+    fun ref _runEventStateForElements(id: String, rc: CanRunCommands) ? =>
         let renderElements = elements.values()
         
         while renderElements.has_next() do
             let re = renderElements.next()?
             
-            if (reIdToIgnore != "") and (re.id == reIdToIgnore) then continue end
-            
             let reState = try re.states(id)? else continue end
+            
+            // make sure the default state is only 
+            // run on the element that called it
+            if id == "default" then
+                match rc
+                | let rcType: RenderElement =>
+                    let el = rc as RenderElement
+                    if el.id != reState.id then continue end
+                end
+            end
+            
             let persist = try reState.ge.properties("persist")? else "0" end
             
             if persist == "1" then
                 Render(this).recalc(re.id, reState)?
             else
-                reState.clone(re)
+                re.cursor = reState.cursor
+                re.texture = reState.texture
+                re.rect = reState.rect
             end
         end
     

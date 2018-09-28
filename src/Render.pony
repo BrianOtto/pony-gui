@@ -95,13 +95,13 @@ class Render
                                     re.callbacks = reNew.callbacks
                                     re.states = reNew.states
                                 else
-                                    re.rect = _getRect(re.texture, re.ge, w, h, wTotal, hTotal)?
+                                    re.rect = _getRect(re.texture, re.ge, w, h, wTotal, hTotal)
                                     
                                     let reStates = re.states.values()
                             
                                     while reStates.has_next() do
                                         let reState = reStates.next()?
-                                        reState.rect = _getRect(reState.texture, reState.ge, w, h, wTotal, hTotal)?
+                                        reState.rect = _getRect(reState.texture, reState.ge, w, h, wTotal, hTotal)
                                     end
                                 end
                             elseif re.id == id then
@@ -316,7 +316,7 @@ class Render
         
         re.id = ge.id
         re.texture = texture
-        re.rect = _getRect(texture, ge, w, h, wTotal, hTotal)?
+        re.rect = _getRect(texture, ge, w, h, wTotal, hTotal)
         
         re
     
@@ -359,39 +359,35 @@ class Render
         
         re.id = ge.id
         re.texture = texture
-        re.rect = _getRect(texture, ge, w, h, wTotal, hTotal)?
+        re.rect = _getRect(texture, ge, w, h, wTotal, hTotal)
         
         re
         
     fun ref _getRect(texture: Pointer[sdl.Texture], guiElement: GuiElement, 
-                     w: I32, h: I32, wTotal: I32, hTotal: I32): sdl.Rect ? =>
+                     w: I32, h: I32, wTotal: I32, hTotal: I32): sdl.Rect =>
         
         let rect = sdl.Rect
         
         sdl.QueryTexture(texture, Pointer[U32], Pointer[I32], rect)
         
-        if guiElement.properties.contains("x") then
-            let guiElementX = guiElement.properties("x")?
-            
-            // TODO: add support for left / right
-            if guiElementX == "center" then
-                rect.w = if rect.w > w then w else rect.w end
-                rect.x = wTotal + ((w - rect.w) / 2)
-            else
-                rect.x = wTotal + try guiElementX.i32()? else 0 end
-            end
+        let guiElementX = try guiElement.properties("x")? else "0" end
+        
+        // TODO: add support for left / right
+        if guiElementX == "center" then
+            rect.w = if rect.w > w then w else rect.w end
+            rect.x = wTotal + ((w - rect.w) / 2)
+        else
+            rect.x = wTotal + try guiElementX.i32()? else 0 end
         end
         
-        if guiElement.properties.contains("y") then
-            let guiElementY = guiElement.properties("y")?
-            
-            // TODO: add support for top / bottom
-            if guiElementY == "center" then
-                rect.h = if rect.h > h then h else rect.h end
-                rect.y = hTotal + ((h - rect.h) / 2)
-            else
-                rect.y = hTotal + try guiElementY.i32()? else 0 end
-            end
+        let guiElementY = try guiElement.properties("y")? else "0" end
+        
+        // TODO: add support for top / bottom
+        if guiElementY == "center" then
+            rect.h = if rect.h > h then h else rect.h end
+            rect.y = hTotal + ((h - rect.h) / 2)
+        else
+            rect.y = hTotal + try guiElementY.i32()? else 0 end
         end
         
         rect

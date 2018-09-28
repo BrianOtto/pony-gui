@@ -23,6 +23,7 @@ class App
     var window: Pointer[sdl.Window] = Pointer[sdl.Window]
     var windowFlags: Array[String] = Array[String]
     var windowTitle: String = ""
+    var windowColor: sdl.Color = sdl.Color
     var windowW: I32 = 1280
     var windowH: I32 = 720
     
@@ -30,7 +31,7 @@ class App
     
     var liveMode: Bool = false
     var liveTime: I64 = 0
-    var liveFile: String = ""
+    var liveFile: String = "layout.gui"
     var liveFileHashes: Map[String, String] = Map[String, String]
     
     var state: AppState = AppState
@@ -40,12 +41,15 @@ class App
         
         if settings.contains("live") then
             liveMode = true
-            liveFile = settings("live")?
+            
+            if settings("live")? != "" then
+                liveFile = settings("live")?
+            end
         end
     
     fun ref init() ? =>
         // load our gui and events
-        Gui(this).load()?
+        Gui(this).load(liveFile)?
         
         // initialize our libraries
         // and create our window and renderer
@@ -171,7 +175,7 @@ class App
             end
             
             // set our background color
-            sdl.SetRenderDrawColor(renderer, 0x31, 0x3D, 0x78, 0xFF)
+            sdl.SetRenderDrawColor(renderer, windowColor.r, windowColor.g, windowColor.b, windowColor.a)
             
             // remove all drawn items
             sdl.RenderClear(renderer)

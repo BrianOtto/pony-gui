@@ -22,10 +22,13 @@ class Gui
         let caps = recover val FileCaps.>set(FileRead).>set(FileStat) end
         let filePath = try FilePath(app.out.root as AmbientAuth, fileName, caps)? else 
             app.logAndExit("The \"" + fileName + "\" file is missing or has incorrect permissions.", false)?
-            return // this is only here so that the compiler doesn't complain about filePath being None
+            return
         end
         
-        var file = OpenFile(filePath) as File
+        var file = try OpenFile(filePath) as File else 
+            app.logAndExit("The \"" + fileName + "\" file is missing or has incorrect permissions.", false)?
+            return
+        end
         
         if reload then
             app.liveFileHashes.update(fileName, ToHexString(
@@ -47,13 +50,6 @@ class Gui
         
         var line: String = ""
         var prev: String = ""
-        
-        let rMap = Map[String, Array[String]]
-        
-        rMap.insert("load", ["src"])?
-        rMap.insert("text", ["font"; "font-size"; "font-color"])?
-        
-        let required = rMap.pairs()
         
         while lines.has_next() do
             if prev == "" then
@@ -83,6 +79,12 @@ class Gui
                     
                     gp.next()?
                     
+                    // default to a white background
+                    app.windowColor.r = 255
+                    app.windowColor.g = 255
+                    app.windowColor.b = 255
+                    app.windowColor.a = 255
+                    
                     while gp.has_next() do
                         let key = gp.next()?
                         
@@ -92,6 +94,11 @@ class Gui
                             match key
                             | "title" =>
                                 app.windowTitle = value
+                            | "color" =>
+                                app.windowColor.r = try ("0x" + value.substring(0, 2)).u8()? else 0 end
+                                app.windowColor.g = try ("0x" + value.substring(2, 4)).u8()? else 0 end
+                                app.windowColor.b = try ("0x" + value.substring(4, 6)).u8()? else 0 end
+                                app.windowColor.a = try ("0x" + value.substring(6, 8)).u8()? else 0 end
                             | "flags" =>
                                 app.windowFlags = value.clone().>remove(" ").split_by(",")
                             | "width" =>
@@ -172,6 +179,13 @@ class Gui
                     end
                     
                     let guiElement = GuiElement
+                    
+                    if guiProperties(0)? == "text" then
+                        guiElement.properties.insert("font", "OpenSans-Regular.ttf")?
+                        guiElement.properties.insert("font-size", "16")?
+                        guiElement.properties.insert("font-color", "000000")?
+                    end
+                    
                     guiElement.command = gp.next()?
                     
                     while gp.has_next() do
@@ -180,10 +194,13 @@ class Gui
                         if gp.has_next() then
                             let value: String val = gp.next()?.clone().>strip("\"").>replace(placeholder, " ")
                             
-                            if key == "id" then
+                            match key
+                            | "id" =>
                                 guiElement.id = value
+                            | "group" =>
+                                guiElement.group = value
                             else
-                                guiElement.properties.insert(key, value)?
+                                guiElement.properties.update(key, value)
                             end
                         end
                     end
@@ -203,6 +220,8 @@ class Gui
                     var guiColState = GuiCol
                     var guiElementState = GuiElement
                     
+                    var guiElementsByGroup = Array[GuiElement]
+                    
                     while gp.has_next() do
                         let key = gp.next()?
                         
@@ -216,7 +235,7 @@ class Gui
                                 break
                             | "persist" =>
                                 persist = "1"
-                            | "id" | "state" =>
+                            | "id" | "state" | "group" =>
                                 if key == "state" then
                                     guiRowState.id = value
                                     guiColState.id = value
@@ -235,9 +254,15 @@ class Gui
                                             end
                                             
                                             for element in col.elements.values() do
-                                                if element.id == value then
-                                                    guiElement = element
-                                                    break
+                                                if key == "group" then
+                                                    if element.group == value then
+                                                        guiElementsByGroup.push(element)
+                                                    end
+                                                else
+                                                    if element.id == value then
+                                                        guiElement = element
+                                                        break
+                                                    end
                                                 end
                                             end
                                             
@@ -246,7 +271,7 @@ class Gui
                                             end
                                         end
                                         
-                                        if guiElement.id != "" then
+                                        if (guiElement.id != "") then
                                             break
                                         end
                                     end
@@ -257,7 +282,8 @@ class Gui
                     
                     if import then
                         continue
-                    elseif (guiRow.id == "") and (guiCol.id == "") and (guiElement.id == "") then
+                    elseif (guiRow.id == "") and (guiCol.id == "") and (guiElement.id == "") and
+                           (guiElementsByGroup.size() == 0) then
                         app.logAndExit("The style command has a missing or invalid \"id\" property.", false)?
                     end
                     
@@ -295,9 +321,16 @@ class Gui
                                         guiColState.width = pvWidth(0)?.f32() / pvWidth(1)?.f32()
                                     end
                                 elseif guiElementState.id != "" then
-                                    guiElementState.properties.insert(propKey, propValue)?
+                                    guiElementState.properties.update(propKey, propValue)
+                                elseif guiElementsByGroup.size() > 0 then
+                                    let geByGroup = guiElementsByGroup.values()
+                    
+                                    while geByGroup.has_next() do
+                                        guiElement = geByGroup.next()?
+                                        guiElement.properties.update(propKey, propValue)
+                                    end
                                 else
-                                    guiElement.properties.insert(propKey, propValue)?
+                                    guiElement.properties.update(propKey, propValue)
                                 end
                             end
                         end
@@ -309,25 +342,6 @@ class Gui
                         guiCol.states.insert(guiColState.id, guiColState)?
                     elseif guiElementState.id != "" then
                         guiElement.states.insert(guiElementState.id, guiElementState)?
-                    else
-                        while required.has_next() do
-                            (var rCommand, var rProperties) = required.next()?
-                            
-                            if guiElement.command == rCommand then
-                                let rp = rProperties.values()
-                                
-                                while rp.has_next() do
-                                    let rProperty = rp.next()?
-                                    
-                                    if not guiElement.properties.contains(rProperty) then
-                                        lineCount = lineCount - 1
-                                        
-                                        app.logAndExit("The \"" + rCommand + "\" command is missing a \"" + 
-                                                        rProperty + "\" property.", false)?
-                                    end
-                                end
-                            end
-                        end
                     end
                 | "event" =>
                     gp.next()?

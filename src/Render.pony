@@ -139,10 +139,12 @@ class Render
         
         match ge.command
         | "draw" =>
+            // TODO: add support for mouse events
             match ge.properties("shape")?
             | "circle" =>
-                // TODO: add support for mouse events
-                re = _renderDraw(ge, w, h, wTotal, hTotal)?
+                re = _renderCircle(ge, w, h, wTotal, hTotal)
+            | "rectangle" =>
+                re = _renderRectangle(ge, w, h, wTotal, hTotal)
             end
         | "load" =>
             match ge.properties("media")?
@@ -180,7 +182,12 @@ class Render
             
             match ge.command
             | "draw" =>
-                reForStyle = _renderDraw(geNew, w, h, wTotal, hTotal)?
+                match ge.properties("shape")?
+                | "circle" =>
+                    reForStyle = _renderCircle(geNew, w, h, wTotal, hTotal)
+                | "rectangle" =>
+                    reForStyle = _renderRectangle(geNew, w, h, wTotal, hTotal)
+                end
             | "load" =>
                 match ge.properties("media")?
                 | "image" =>
@@ -202,7 +209,7 @@ class Render
         
         re
     
-    fun ref _renderDraw(ge: GuiElement, w: I32, h: I32, wTotal: I32, hTotal: I32): RenderElement ? =>
+    fun ref _renderCircle(ge: GuiElement, w: I32, h: I32, wTotal: I32, hTotal: I32): RenderElement =>
         var x: I32 = 0
         var y: I32 = 0
         
@@ -211,26 +218,22 @@ class Render
         radius = if radius > w then w else radius end
         radius = if radius > h then h else radius end
         
-        if ge.properties.contains("x") then
-            let geX = ge.properties("x")?
-            
-            // TODO: add support for left / right
-            if geX == "center" then
-                x = wTotal + ((w - (radius * 2)) / 2) + radius
-            else
-                x = wTotal + try geX.i32()? else 0 end
-            end
+        let guiElementX = try ge.properties("x")? else "0" end
+        
+        // TODO: add support for left / right
+        if guiElementX == "center" then
+            x = wTotal + ((w - (radius * 2)) / 2) + radius
+        else
+            x = wTotal + try guiElementX.i32()? else 0 end
         end
         
-        if ge.properties.contains("y") then
-            let geY = ge.properties("y")?
-            
-            // TODO: add support for top / bottom
-            if geY == "center" then
-                y = hTotal + ((h - (radius * 2)) / 2) + radius
-            else
-                y = hTotal + try geY.i32()? else 0 end
-            end
+        let guiElementY = try ge.properties("y")? else "0" end
+        
+        // TODO: add support for top / bottom
+        if guiElementY == "center" then
+            y = hTotal + ((h - (radius * 2)) / 2) + radius
+        else
+            y = hTotal + try guiElementY.i32()? else 0 end
         end
         
         let antiAliased: Bool = try
@@ -245,7 +248,7 @@ class Render
             true // default to true
         end
         
-        var borderColor: U32 = 0
+        var borderColor: U32 = try "0x000000FF".u32()? else 0 end
         
         if border and ge.properties.contains("border-color") then
             // convert to a hexadecimal string
@@ -317,6 +320,130 @@ class Render
         re.id = ge.id
         re.texture = texture
         re.rect = _getRect(texture, ge, w, h, wTotal, hTotal)
+        
+        re
+    
+    fun ref _renderRectangle(ge: GuiElement, w: I32, h: I32, wTotal: I32, hTotal: I32): RenderElement =>
+        var x1: I32 = 0
+        var x2: I32 = 0
+        var y1: I32 = 0
+        var y2: I32 = 0
+        
+        var width: I32 = 0
+        let widthProp = try ge.properties("width")? else "1/1" end
+        
+        if widthProp.contains("/") then
+            let widthParts = widthProp.split_by("/")
+            let widthAsPct = try widthParts(0)?.f32() / widthParts(1)?.f32() else 1 end
+            width = (w.f32() * widthAsPct).i32()
+        else
+            width = try ge.properties("width")?.i32()? else w end
+        end
+        
+        width = if width > w then w else width end
+        
+        var height: I32 = 0
+        let heightProp = try ge.properties("height")? else "1/1" end
+        
+        if heightProp.contains("/") then
+            let heightParts = heightProp.split_by("/")
+            let heightAsPct = try heightParts(0)?.f32() / heightParts(1)?.f32() else 1 end
+            height = (h.f32() * heightAsPct).i32()
+        else
+            height = try ge.properties("height")?.i32()? else h end
+        end
+        
+        height = if height > h then h else height end
+        
+        let guiElementX = try ge.properties("x")? else "0" end
+        
+        // TODO: add support for left / right
+        if guiElementX == "center" then
+            x1 = wTotal + ((w - width) / 2)
+        else
+            x1 = wTotal + try guiElementX.i32()? else 0 end
+        end
+        
+        x2 = x1 + width
+        
+        let guiElementY = try ge.properties("y")? else "0" end
+        
+        // TODO: add support for top / bottom
+        if guiElementY == "center" then
+            y1 = hTotal + ((h - height) / 2)
+        else
+            y1 = hTotal + try guiElementY.i32()? else 0 end
+        end
+        
+        y2 = y1 + height
+        
+        let antiAliased: Bool = try
+            if ge.properties("anti-aliased")? == "1" then true else false end
+        else
+            true // default to true
+        end
+        
+        let border: Bool = try
+            if ge.properties("border")? == "1" then true else false end
+        else
+            true // default to true
+        end
+        
+        var borderColor: U32 = try "0x000000FF".u32()? else 0 end
+        
+        if border and ge.properties.contains("border-color") then
+            // convert to a hexadecimal string
+            var borderColorAsString = "0x" + try ge.properties("border-color")? else "" end
+            
+            // default to 0 for any missing RGB values
+            while borderColorAsString.size() < 10 do
+                borderColorAsString = borderColorAsString + 
+                    if borderColorAsString.size() < 8 then "0" else "F" end
+            end
+            
+            // convert to a unsigned integer
+            borderColor = try borderColorAsString.u32()? else 0 end
+        end
+        
+        let callbacks: Array[{ref (): Any val}] = []
+        
+        if ge.properties.contains("fill") then
+            // convert to a hexadecimal string
+            var fillAsString = "0x" + try ge.properties("fill")? else "" end
+            
+            // default to 0 for any missing RGB values
+            while fillAsString.size() < 10 do
+                fillAsString = fillAsString + 
+                    if fillAsString.size() < 8 then "0" else "F" end
+            end
+            
+            // convert to a unsigned integer
+            let fill = try fillAsString.u32()? else 0 end
+            
+            if antiAliased and not ge.properties.contains("border-color") then
+                borderColor = fill
+            end
+            
+            callbacks.push(
+                gfx.BoxColor~apply(app.renderer, x1.i16(), y1.i16(), x2.i16(), y2.i16(), fill)
+            )
+        end
+        
+        // TODO: does GFX provide an anti-aliased function ?
+        if antiAliased then
+            callbacks.push(
+                gfx.RectangleColor~apply(app.renderer, x1.i16(), y1.i16(), x2.i16(), y2.i16(), borderColor)
+            )
+        else
+            callbacks.push(
+                gfx.RectangleColor~apply(app.renderer, x1.i16(), y1.i16(), x2.i16(), y2.i16(), borderColor)
+            )
+        end
+        
+        let re = RenderElement
+        
+        re.id = ge.id
+        re.callbacks = callbacks
         
         re
     

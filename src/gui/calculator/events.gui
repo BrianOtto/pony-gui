@@ -1,0 +1,2 @@
+event type "resize"
+    run state "resize-button"

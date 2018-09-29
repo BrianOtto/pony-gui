@@ -1,0 +1,9 @@
+style group "button"
+    width "8/10"
+    height "8/10"
+    x "center"
+    y "center"
+
+style group "button-text"
+    x "center"
+    y "center"

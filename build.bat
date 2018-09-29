@@ -10,7 +10,7 @@ REM The name of the binary
 SET "BIN=pony-gui"
 
 REM The name of the application to compile
-SET "APP=demo"
+SET "APP=calculator"
 
 REM The command line parameters to use
 REM --live <filename> = The application will reload GUI changes as it runs
@@ -24,7 +24,7 @@ ECHO Building Pony-GUI ...
 ECHO.
 
 REM Copy the application API to the source directory
-XCOPY /Y %SRC%\gui\%APP%\Api.pony %SRC% 1>NUL
+XCOPY /Y %SRC%\gui\%APP%\Api.pony %SRC% > NUL 2>&1
 
 CD %SRC%
 

@@ -1,6 +1,7 @@
 use "collections"
 
 class GuiElement
+    var guid: U32 = -1
     var id: String = ""
     var group: String = ""
     var command: String = ""
@@ -10,6 +11,7 @@ class GuiElement
     new create() => None
     
     fun ref clone(ge: GuiElement = GuiElement, cloneStates: Bool = false): GuiElement =>
+        ge.guid = guid
         ge.id = id
         ge.command = command
         ge.properties = properties.clone()

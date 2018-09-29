@@ -155,6 +155,8 @@ class App
                         
                         Debug.out("resized to " + windowW.string() + " x " + windowH.string())
                         
+                        Render(this).recalc()?
+                        
                         if events.contains("resize") then
                             let guiEvents = events("resize")?.values()
                             

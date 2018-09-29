@@ -35,7 +35,10 @@ class Render
                 
                 while guiElements.has_next() do
                     let ge = guiElements.next()?
+                    ge.guid = app.elements.size().u32()
+                    
                     let re = render(ge, w, h, wTotal, hTotal)?
+                    re.guid = ge.guid
                     
                     app.elements.push(re)
                 end
@@ -46,7 +49,7 @@ class Render
             hTotal = hTotal + h
         end
     
-    fun ref recalc(id: String, reRender: RenderElement = RenderElement) ? =>
+    fun ref recalc(id: String = "", reRender: RenderElement = RenderElement) ? =>
         var hTotal: I32 = 0
         var wTotal: I32 = 0
         
@@ -87,7 +90,7 @@ class Render
                     while reElements.has_next() do
                         let re = reElements.next()?
                         
-                        if re.id == ge.id then
+                        if re.guid == ge.guid then
                             if reRender.id == "" then
                                 if ge.command == "draw" then
                                     var reNew = render(ge, w, h, wTotal, hTotal)?

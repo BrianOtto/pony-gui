@@ -4,6 +4,7 @@ use "debug"
 use sdl = "sdl"
 
 class RenderElement is ICanRunCommands
+    var guid: U32 = -1
     var id: String = ""
     var ge: GuiElement = GuiElement
     var geState: GuiElement = GuiElement
@@ -17,6 +18,7 @@ class RenderElement is ICanRunCommands
     new create() => None
     
     fun ref clone(re: RenderElement = RenderElement, cloneStates: Bool = false): RenderElement =>
+        re.guid = guid
         re.id = id
         re.ge = ge.clone()
         re.geState = geState.clone()

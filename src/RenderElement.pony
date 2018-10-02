@@ -25,11 +25,11 @@ class RenderElement is ICanRunCommands
         re.ge = ge.clone()
         re.geState = geState.clone()
         re.cursor = cursor
+        re.callbacks = callbacks.clone()
         re.texture = texture
         re.rect = rect
         
         if cloneStates then
-            re.callbacks = callbacks.clone()
             re.states = states.clone()
         end
         

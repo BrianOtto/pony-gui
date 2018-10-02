@@ -13,6 +13,7 @@ class GuiElement
     fun ref clone(ge: GuiElement = GuiElement, cloneStates: Bool = false): GuiElement =>
         ge.guid = guid
         ge.id = id
+        ge.group = group
         ge.command = command
         ge.properties = properties.clone()
         

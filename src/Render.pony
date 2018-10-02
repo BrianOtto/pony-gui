@@ -17,28 +17,20 @@ class Render
         var hTotal: I32 = 0
         var wTotal: I32 = 0
         
-        let guiRows = if gui.size() > 0 then gui.values() else app.gui.values() end
+        let guiRows = if gui.size() > 0 then gui else app.gui end
         
-        while guiRows.has_next() do
-            let guiRow = guiRows.next()?
-            let guiCols = guiRow.cols.values()
-            
+        for guiRow in guiRows.values() do
             let h: I32 = (app.windowH.f32() * guiRow.height).i32()
             
             wTotal = 0
             
-            while guiCols.has_next() do
-                let guiCol = guiCols.next()?
-                let guiElements = guiCol.elements.values()
-                
+            for guiCol in guiRow.cols.values() do
                 let w: I32 = (app.windowW.f32() * guiCol.width).i32()
                 
-                while guiElements.has_next() do
-                    let ge = guiElements.next()?
+                for ge in guiCol.elements.values() do
                     ge.guid = app.elements.size().u32()
                     
                     let re = render(ge, w, h, wTotal, hTotal)?
-                    re.guid = ge.guid
                     
                     app.elements.push(re)
                 end
@@ -53,12 +45,7 @@ class Render
         var hTotal: I32 = 0
         var wTotal: I32 = 0
         
-        let guiRows = app.gui.values()
-        
-        while guiRows.has_next() do
-            let guiRow = guiRows.next()?
-            let guiCols = guiRow.cols.values()
-            
+        for guiRow in app.gui.values() do
             var guiRowHeight = guiRow.height
             
             if (reRender.id == "") and guiRow.states.contains(id) then
@@ -70,10 +57,7 @@ class Render
             
             wTotal = 0
             
-            while guiCols.has_next() do
-                let guiCol = guiCols.next()?
-                let guiElements = guiCol.elements.values()
-                
+            for guiCol in guiRow.cols.values() do
                 var guiColWidth = guiCol.width
                 
                 if (reRender.id == "") and guiCol.states.contains(id) then
@@ -83,13 +67,8 @@ class Render
                 
                 let w: I32 = (app.windowW.f32() * guiColWidth).i32()
                 
-                while guiElements.has_next() do
-                    let ge = guiElements.next()?
-                    let reElements = app.elements.values()
-                    
-                    while reElements.has_next() do
-                        let re = reElements.next()?
-                        
+                for ge in guiCol.elements.values() do
+                    for re in app.elements.values() do
                         if re.guid == ge.guid then
                             if reRender.id == "" then
                                 if ge.command == "draw" then
@@ -100,20 +79,14 @@ class Render
                                 else
                                     re.rect = _getRect(re.texture, re.ge, w, h, wTotal, hTotal)
                                     
-                                    let reStates = re.states.values()
-                            
-                                    while reStates.has_next() do
-                                        let reState = reStates.next()?
+                                    for reState in re.states.values() do
                                         reState.rect = _getRect(reState.texture, reState.ge, w, h, wTotal, hTotal)
                                     end
                                 end
                             elseif re.id == id then
                                 // get the properties the state was originally rendered with
-                                let geProps = reRender.geState.properties.pairs()
-                                
                                 // and make them permanent by merging them with the GUI element
-                                while geProps.has_next() do
-                                    var geProp = geProps.next()?
+                                for geProp in reRender.geState.properties.pairs() do
                                     ge.properties.update(geProp._1, geProp._2)
                                 end
                                 
@@ -142,7 +115,6 @@ class Render
         
         match ge.command
         | "draw" =>
-            // TODO: add support for mouse events
             match ge.properties("shape")?
             | "circle" =>
                 re = _renderCircle(ge, w, h, wTotal, hTotal)
@@ -163,23 +135,19 @@ class Render
         end
         
         re.ge = ge
+        re.guid = ge.guid
+        re.group = ge.group
         re.geState = ge.clone()
         re.geState.id = "default"
         
         re.states.insert(re.geState.id, re.clone())?
         
-        let styleStates = ge.states.values()
-        
-        while styleStates.has_next() do
-            let styleState = styleStates.next()?
+        for styleState in ge.states.values() do
             var reForStyle = RenderElement
             
             let geNew = ge.clone()
             
-            let geProps = styleState.properties.pairs()
-            
-            while geProps.has_next() do
-                var geProp = geProps.next()?
+            for geProp in styleState.properties.pairs() do
                 geNew.properties.update(geProp._1, geProp._2)
             end
             
@@ -205,6 +173,8 @@ class Render
             end
             
             reForStyle.ge = geNew
+            reForStyle.guid = geNew.guid
+            reForStyle.group = geNew.group
             reForStyle.geState = styleState
             
             re.states.insert(reForStyle.geState.id, reForStyle)?
@@ -216,8 +186,17 @@ class Render
         var x: I32 = 0
         var y: I32 = 0
         
-        // TODO: allow radius to be specified as a percentage of w / h (e.g "1/3")
-        var radius: I32 = try ge.properties("radius")?.i32()? else 0 end
+        var radius: I32 = 0
+        let radiusProp = try ge.properties("radius")? else "1/1" end
+        
+        if radiusProp.contains("/") then
+            let radiusParts = radiusProp.split_by("/")
+            let radiusAsPct = try radiusParts(0)?.f32() / radiusParts(1)?.f32() else 1 end
+            radius = (w.f32() * radiusAsPct).i32()
+        else
+            radius = try ge.properties("radius")?.i32()? else w end
+        end
+        
         radius = if radius > w then w else radius end
         radius = if radius > h then h else radius end
         
@@ -305,6 +284,12 @@ class Render
         
         re.id = ge.id
         re.callbacks = callbacks
+        
+        // create a dummy rect to support mouse events
+        re.rect.x = radius - x
+        re.rect.w = radius * 2
+        re.rect.y = radius + y
+        re.rect.h = radius * 2
         
         re
     
@@ -447,6 +432,12 @@ class Render
         
         re.id = ge.id
         re.callbacks = callbacks
+        
+        // create a dummy rect to support mouse events
+        re.rect.x = x1
+        re.rect.w = x2 - x1
+        re.rect.y = y1
+        re.rect.h = y2 - y1
         
         re
     

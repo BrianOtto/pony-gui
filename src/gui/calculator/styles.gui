@@ -7,3 +7,7 @@ style group "button"
 style group "button-text"
     x "center"
     y "center"
+
+style group "button" state "button-over"
+    fill "C0C0C0"
+    cursor "hand"

@@ -76,8 +76,8 @@ class App
                     var event: sdl.MouseMotionEvent ref = sdl.MouseMotionEvent
                     more = sdl.PollMouseMotionEvent(MaybePointer[sdl.MouseMotionEvent](event))
                     
-                    Debug.out("x = " + event.x.string())
-                    Debug.out("y = " + event.y.string())
+                    // Debug.out("x = " + event.x.string())
+                    // Debug.out("y = " + event.y.string())
                     
                     var elementsByEvent = _getElementsByEvent("out")?
                     var reEvents = elementsByEvent.values()
@@ -88,21 +88,17 @@ class App
                         if (event.x < re.rect.x) or (event.x > (re.rect.x + re.rect.w)) or
                            (event.y < re.rect.y) or (event.y > (re.rect.y + re.rect.h)) then
 
-                            Debug.out("out = " + re.id)
+                            // Debug.out("out = " + re.id)
 
                             _runEventCommands(ge, re)?
                         end
                     end
                     
-                    let reCursors = elements.values()
-            
-                    while reCursors.has_next() do
-                        let rc = reCursors.next()?
-                        
+                    for rc in elements.values() do
                         if (event.x >= rc.rect.x) and (event.x <= (rc.rect.x + rc.rect.w)) and
                            (event.y >= rc.rect.y) and (event.y <= (rc.rect.y + rc.rect.h)) then
                             
-                            Debug.out("over for cursor = " + rc.id)
+                            // Debug.out("over for cursor = " + rc.id)
                             
                             if cursors.contains(rc.cursor) then
                                 sdl.SetCursor(cursors(rc.cursor)?)
@@ -119,7 +115,7 @@ class App
                         if (event.x >= re.rect.x) and (event.x <= (re.rect.x + re.rect.w)) and
                            (event.y >= re.rect.y) and (event.y <= (re.rect.y + re.rect.h)) then
 
-                            Debug.out("over = " + re.id)
+                            // Debug.out("over = " + re.id)
 
                             _runEventCommands(ge, re)?
                         end
@@ -140,7 +136,7 @@ class App
                         if (event.x >= re.rect.x) and (event.x <= (re.rect.x + re.rect.w)) and
                            (event.y >= re.rect.y) and (event.y <= (re.rect.y + re.rect.h)) then
 
-                            Debug.out("click = " + re.id)
+                            // Debug.out("click = " + re.id)
 
                             _runEventCommands(ge, re)?
                         end
@@ -153,16 +149,12 @@ class App
                         windowW = event.data1
                         windowH = event.data2
                         
-                        Debug.out("resized to " + windowW.string() + " x " + windowH.string())
+                        // Debug.out("resized to " + windowW.string() + " x " + windowH.string())
                         
                         Render(this).recalc()?
                         
                         if events.contains("resize") then
-                            let guiEvents = events("resize")?.values()
-                            
-                            while guiEvents.has_next() do
-                                let ge = guiEvents.next()?
-                                
+                            for ge in events("resize")?.values() do
                                 _runEventCommands(ge, state)?
                             end
                         end
@@ -182,19 +174,13 @@ class App
             // remove all drawn items
             sdl.RenderClear(renderer)
             
-            let re = elements.values()
-            
-            while re.has_next() do
-                let element = re.next()?
-                
+            for element in elements.values() do
                 if not element.texture.is_null() then
                     sdl.RenderCopy(renderer, element.texture, Pointer[sdl.Rect], MaybePointer[sdl.Rect](element.rect))
                 end
                 
-                let cb = element.callbacks.values()
-                
-                while cb.has_next() do
-                    cb.next()?()
+                for callback in element.callbacks.values() do
+                    callback()
                 end
             end
             
@@ -218,11 +204,9 @@ class App
         
         Gui(this).load(fileName, true)?
         
-        let liveFileHashesNew = liveFileHashes.values()
         var liveFileHashesDifferent = false
         
-        while liveFileHashesNew.has_next() do
-            let hashNew = liveFileHashesNew.next()?
+        for hashNew in liveFileHashes.values() do
             let hashOld = try liveFileHashesOld.next()? else
                 liveFileHashesDifferent = true
                 break
@@ -360,17 +344,10 @@ class App
         var elementsByEvent: Array[(GuiEvent, RenderElement)] = []
         
         if events.contains(eventType) then
-            let guiEvents = events(eventType)?.values()
-            
-            while guiEvents.has_next() do
-                let ge = guiEvents.next()?
-                
-                let renderElements = elements.values()
-                
-                while renderElements.has_next() do
-                    let re = renderElements.next()?
-                    
-                    if ge.id == re.id then
+            for ge in events(eventType)?.values() do
+                for re in elements.values() do
+                    if ((ge.id != "") and (ge.id == re.id)) or
+                       ((ge.group != "") and (ge.group == re.group)) then
                         elementsByEvent.push((ge, re))
                     end
                 end
@@ -380,10 +357,7 @@ class App
         elementsByEvent
     
     fun ref _runEventCommands(ge: GuiEvent, re: CanRunCommands, setData: Bool = false) ? =>
-        let commands = ge.commands.values()
-        
-        while commands.has_next() do
-            let command = commands.next()?
+        for command in ge.commands.values() do
             var when = false
             
             if command.whenVar == "" then
@@ -504,21 +478,13 @@ class App
         // as this requires all element rects to be recalculated
         var recalc = false
         
-        let rows = gui.values()
-            
-        while rows.has_next() do
-            let row = rows.next()?
-            
+        for row in gui.values() do
             if row.states.contains(id) then
                 recalc = true
                 break
             end
             
-            let cols = row.cols.values()
-            
-            while cols.has_next() do
-                let col = cols.next()?
-                
+            for col in row.cols.values() do
                 if col.states.contains(id) then
                     recalc = true
                     break
@@ -535,20 +501,16 @@ class App
         _runEventStateForElements(id, rc)?
     
     fun ref _runEventStateForElements(id: String, rc: CanRunCommands) ? =>
-        let renderElements = elements.values()
-        
-        while renderElements.has_next() do
-            let re = renderElements.next()?
-            
+        for re in elements.values() do
             let reState = try re.states(id)? else continue end
             
-            // make sure the default state is only 
+            // make sure the default or group state is only 
             // run on the element that called it
-            if id == "default" then
+            if (id == "default") or (reState.group != "") then
                 match rc
                 | let rcType: RenderElement =>
                     let el = rc as RenderElement
-                    if el.id != reState.id then continue end
+                    if el.guid != reState.guid then continue end
                 end
             end
             
@@ -557,6 +519,7 @@ class App
             if persist == "1" then
                 Render(this).recalc(re.id, reState)?
             else
+                re.callbacks = reState.callbacks
                 re.cursor = reState.cursor
                 re.texture = reState.texture
                 re.rect = reState.rect

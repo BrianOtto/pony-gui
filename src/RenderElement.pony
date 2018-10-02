@@ -6,6 +6,7 @@ use sdl = "sdl"
 class RenderElement is ICanRunCommands
     var guid: U32 = -1
     var id: String = ""
+    var group: String = ""
     var ge: GuiElement = GuiElement
     var geState: GuiElement = GuiElement
     var cursor: String = "arrow"
@@ -20,6 +21,7 @@ class RenderElement is ICanRunCommands
     fun ref clone(re: RenderElement = RenderElement, cloneStates: Bool = false): RenderElement =>
         re.guid = guid
         re.id = id
+        re.group = group
         re.ge = ge.clone()
         re.geState = geState.clone()
         re.cursor = cursor

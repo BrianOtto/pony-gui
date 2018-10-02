@@ -105,6 +105,8 @@ class Gui
                                 app.windowW = try value.i32()? else error end
                             | "height" =>
                                 app.windowH = try value.i32()? else error end
+                            else
+                                error
                             end
                         end
                     end
@@ -126,6 +128,8 @@ class Gui
                                 // TODO: allow pixel values (i.e. they will not have the "/")
                                 let height = value.split_by("/")
                                 guiRow.height = height(0)?.f32() / height(1)?.f32()
+                            else
+                                error
                             end
                         end
                     end
@@ -161,6 +165,8 @@ class Gui
                                 // TODO: allow pixel values (i.e. they will not have the "/")
                                 let width = value.split_by("/")
                                 guiCol.width = width(0)?.f32() / width(1)?.f32()
+                            else
+                                error
                             end
                         end
                     end
@@ -276,6 +282,8 @@ class Gui
                                         end
                                     end
                                 end
+                            else
+                                error
                             end
                         end
                     end
@@ -323,11 +331,8 @@ class Gui
                                 elseif guiElementState.id != "" then
                                     guiElementState.properties.update(propKey, propValue)
                                 elseif guiElementsByGroup.size() > 0 then
-                                    let geByGroup = guiElementsByGroup.values()
-                    
-                                    while geByGroup.has_next() do
-                                        guiElement = geByGroup.next()?
-                                        guiElement.properties.update(propKey, propValue)
+                                    for geByGroup in guiElementsByGroup.values() do
+                                        geByGroup.properties.update(propKey, propValue)
                                     end
                                 else
                                     guiElement.properties.update(propKey, propValue)
@@ -341,13 +346,21 @@ class Gui
                     elseif guiCol.id != "" then
                         guiCol.states.insert(guiColState.id, guiColState)?
                     elseif guiElementState.id != "" then
-                        guiElement.states.insert(guiElementState.id, guiElementState)?
+                        if guiElementsByGroup.size() > 0 then
+                            for geByGroup in guiElementsByGroup.values() do
+                                geByGroup.states.insert(guiElementState.id, guiElementState)?
+                            end
+                        else
+                            guiElement.states.insert(guiElementState.id, guiElementState)?
+                        end
                     end
                 | "event" =>
                     gp.next()?
                     
                     var import = false
                     var guiEvent = GuiEvent
+                    
+                    var guiEventsByGroup = Array[GuiEvent]
                     
                     while gp.has_next() do
                         let key = gp.next()?
@@ -360,7 +373,7 @@ class Gui
                                 load(value)?
                                 import = true
                                 break
-                            | "id" =>
+                            | "id" | "group" =>
                                 for row in app.gui.values() do
                                     if row.id == value then
                                         guiEvent.id = row.id
@@ -374,9 +387,16 @@ class Gui
                                         end
                                         
                                         for element in col.elements.values() do
-                                            if element.id == value then
-                                                guiEvent.id = element.id
-                                                break
+                                            if key == "group" then
+                                                if element.group == value then
+                                                    guiEvent.group = element.group
+                                                    guiEventsByGroup.push(guiEvent)
+                                                end
+                                            else
+                                                if element.id == value then
+                                                    guiEvent.id = element.id
+                                                    break
+                                                end
                                             end
                                         end
                                         
@@ -390,17 +410,32 @@ class Gui
                                     end
                                 end
                             | "type" =>
-                                guiEvent.eventType = value
+                                if (key == "group") and (guiEventsByGroup.size() > 0) then
+                                    for geByGroup in guiEventsByGroup.values() do
+                                        geByGroup.eventType = value
+                                    end
+                                else
+                                    guiEvent.eventType = value
+                                end
+                            else
+                                error
                             end
                         end
                     end
                     
-                    if import then continue elseif (guiEvent.id == "") and (guiEvent.eventType != "resize") then
+                    if import then
+                        continue
+                    elseif (guiEvent.id == "") and (guiEvent.eventType != "resize") and
+                           (guiEventsByGroup.size() == 0) then
                         app.logAndExit("The event command has a missing or invalid \"id\" property.", false)?
                     end
                     
                     if guiEvent.eventType == "" then
                         app.logAndExit("The event command has a missing \"type\" property.", false)?
+                    end
+                    
+                    if guiEventsByGroup.size() == 0 then
+                        guiEventsByGroup.push(guiEvent)
                     end
                     
                     while lines.has_next() do
@@ -438,6 +473,12 @@ class Gui
                             | "set" =>
                                 dataVar = eventCommand(1)?
                                 dataVal = eventCommand(2)?
+                            else
+                                error
+                            end
+                            
+                            if (runType != "") and (runType != "state") and (runType != "api") then
+                                error
                             end
                             
                             whenVar = try eventCommand(4)? else "" end
@@ -465,15 +506,21 @@ class Gui
                             gec.elseVar = elseVar.clone().>strip("\"").>replace(placeholder, " ")
                             gec.elseVal = elseVal.clone().>strip("\"").>replace(placeholder, " ")
                             
-                            guiEvent.commands.push(gec)
+                            for geByGroup in guiEventsByGroup.values() do
+                                geByGroup.commands.push(gec)
+                            end
                         end
                     end
                     
-                    if app.events.contains(guiEvent.eventType) then
-                        app.events(guiEvent.eventType)?.push(guiEvent)
-                    else
-                        app.events.insert(guiEvent.eventType, [guiEvent])?
+                    for geByGroup in guiEventsByGroup.values() do
+                        if app.events.contains(geByGroup.eventType) then
+                            app.events(geByGroup.eventType)?.push(geByGroup)
+                        else
+                            app.events.insert(geByGroup.eventType, [geByGroup])?
+                        end
                     end
+                else
+                    error
                 end
             else
                 app.logAndExit("The \"" + fileName + "\" file has invalid syntax on line " + 
@@ -481,73 +528,49 @@ class Gui
             end
         end
         
-        // some debugging to verify we are parsing things properly
-        
         if (fileName != "layout.gui") or (app.liveMode and (fileName != app.liveFile)) then
             return
         end
         
         file.dispose()
         
-        let lr = app.gui.values()
-                    
-        while lr.has_next() do
-            let myRow = lr.next()?
-            
+        /* some debugging to verify we are parsing things properly
+        
+        for myRow in app.gui.values() do
             Debug.out("\nRow")
             Debug.out("-----------------\n")
             Debug.out("id = " + myRow.id)
             Debug.out("height = " + myRow.height.string())
             
-            let lc = myRow.cols.values()
-            
-            if lc.has_next() then
+            if myRow.cols.values().has_next() then
                 Debug.out("\nCol")
                 
-                while lc.has_next() do
-                    let myCol = lc.next()?
-                    
+                for myCol in myRow.cols.values() do
                     Debug.out("-----------------\n")
                     Debug.out("id = " + myCol.id)
                     Debug.out("width = " + myCol.width.string())
                     
-                    let lelements = myCol.elements.values()
-            
-                    if lelements.has_next() then
+                    if myCol.elements.values().has_next() then
                         Debug.out("\nElements")
                         
-                        while lelements.has_next() do
-                            let myElement = lelements.next()?
-                            
+                        for myElement in myCol.elements.values() do
                             Debug.out("------------------\n")
                             Debug.out("id = " + myElement.id)
                             Debug.out("command = " + myElement.command)
                             
-                            let lprops = myElement.properties.pairs()
-                            
-                            while lprops.has_next() do
-                                let myProp = lprops.next()?
-                                
+                            for myProp in myElement.properties.pairs() do
                                 Debug.out(myProp._1 + " = " + myProp._2)
                             end
                             
-                            let lge = myElement.states.values()
-                            
-                            while lge.has_next() do
-                                let myGuiState = lge.next()?
-                                
+                            for myGuiState in myElement.states.values() do
                                 Debug.out("\nstate id = " + myGuiState.id)
                                 
-                                let geprops = myGuiState.properties.pairs()
-                    
-                                while geprops.has_next() do
-                                    let myGuiStateProp = geprops.next()?
-                                    
+                                for myGuiStateProp in myGuiState.properties.pairs() do
                                     Debug.out(myGuiStateProp._1 + " = " + myGuiStateProp._2)
                                 end
                             end
                             
-                            if lelements.has_next() then
+                            if myCol.elements.values().has_next() then
                                 Debug.out("")
                             end
                         end
@@ -556,31 +579,19 @@ class Gui
             end
         end
         
-        let lae = app.events.pairs()
-            
-        if lae.has_next() then
+        if app.events.pairs().has_next() then
             Debug.out("")
             
-            while lae.has_next() do
-                let myEventType = lae.next()?
-                
+            for myEventType in app.events.pairs() do
                 Debug.out("Events - " + myEventType._1)
                 
-                let myEvents = myEventType._2.values()
-                
-                while myEvents.has_next() do
-                    let myEvent = myEvents.next()?
-                    
+                for myEvent in myEventType._2.values() do
                     Debug.out("-----------------\n")
                     Debug.out("id = " + myEvent.id)
                     
                     Debug.out("")
                     
-                    let lcommands = myEvent.commands.values()
-                    
-                    while lcommands.has_next() do
-                        let myCommand = lcommands.next()?
-                        
+                    for myCommand in myEvent.commands.values() do
                         let myCommandId = if myCommand.stateId == "" then
                             myCommand.dataVar
                         else
@@ -594,6 +605,7 @@ class Gui
                 end
             end
         end
+        */
         
     fun ref _cleanLine(line: String): String ref ? =>
         let lineClean: String ref = line.clone()

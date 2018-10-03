@@ -203,7 +203,12 @@ class Render
         let guiElementX = ge.properties.get_or_else("x", "0")
         
         // TODO: add support for left / right
-        if guiElementX == "center" then
+        match guiElementX
+        | "left" =>
+            x = wTotal
+        | "right" =>
+            x = w - (radius * 2)
+        | "center" =>
             x = wTotal + ((w - (radius * 2)) / 2) + radius
         else
             x = wTotal + try guiElementX.i32()? else 0 end
@@ -211,8 +216,12 @@ class Render
         
         let guiElementY = ge.properties.get_or_else("y", "0")
         
-        // TODO: add support for top / bottom
-        if guiElementY == "center" then
+        match guiElementY
+        | "top" =>
+            y = hTotal
+        | "bottom" =>
+            y = h - (radius * 2)
+        | "center" =>
             y = hTotal + ((h - (radius * 2)) / 2) + radius
         else
             y = hTotal + try guiElementY.i32()? else 0 end
@@ -345,8 +354,12 @@ class Render
         
         let guiElementX = ge.properties.get_or_else("x", "0")
         
-        // TODO: add support for left / right
-        if guiElementX == "center" then
+        match guiElementX
+        | "left" =>
+            x1 = wTotal
+        | "right" =>
+            x1 = w - width
+        | "center" =>
             x1 = wTotal + ((w - width) / 2)
         else
             x1 = wTotal + try guiElementX.i32()? else 0 end
@@ -356,8 +369,12 @@ class Render
         
         let guiElementY = ge.properties.get_or_else("y", "0")
         
-        // TODO: add support for top / bottom
-        if guiElementY == "center" then
+        match guiElementY
+        | "top" =>
+            y1 = hTotal
+        | "bottom" =>
+            y1 = h - height
+        | "center" =>
             y1 = hTotal + ((h - height) / 2)
         else
             y1 = hTotal + try guiElementY.i32()? else 0 end
@@ -474,20 +491,28 @@ class Render
         sdl.QueryTexture(texture, Pointer[U32], Pointer[I32], rect)
         
         let guiElementX = guiElement.properties.get_or_else("x", "0")
+        rect.w = if rect.w > w then w else rect.w end
         
-        // TODO: add support for left / right
-        if guiElementX == "center" then
-            rect.w = if rect.w > w then w else rect.w end
+        match guiElementX
+        | "left" =>
+            rect.x = wTotal
+        | "right" =>
+            rect.x = w - rect.w
+        | "center" =>
             rect.x = wTotal + ((w - rect.w) / 2)
         else
             rect.x = wTotal + try guiElementX.i32()? else 0 end
         end
         
         let guiElementY = guiElement.properties.get_or_else("y", "0")
+        rect.h = if rect.h > h then h else rect.h end
         
-        // TODO: add support for top / bottom
-        if guiElementY == "center" then
-            rect.h = if rect.h > h then h else rect.h end
+        match guiElementY
+        | "top" =>
+            rect.y = hTotal
+        | "bottom" =>
+            rect.y = h - rect.h
+        | "center" =>
             rect.y = hTotal + ((h - rect.h) / 2)
         else
             rect.y = hTotal + try guiElementY.i32()? else 0 end

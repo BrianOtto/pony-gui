@@ -47,6 +47,20 @@ class App
                 liveFile = settings("live")?
             end
         end
+        
+        // create our cursors
+        cursors.update("arrow", sdl.CreateSystemCursor(sdl.CURSORARROW()))
+        cursors.update("crosshair", sdl.CreateSystemCursor(sdl.CURSORCROSSHAIR()))
+        cursors.update("hand", sdl.CreateSystemCursor(sdl.CURSORHAND()))
+        cursors.update("ibeam", sdl.CreateSystemCursor(sdl.CURSORIBEAM()))
+        cursors.update("no", sdl.CreateSystemCursor(sdl.CURSORNO()))
+        cursors.update("sizeall", sdl.CreateSystemCursor(sdl.CURSORSIZEALL()))
+        cursors.update("sizenesw", sdl.CreateSystemCursor(sdl.CURSORSIZENESW()))
+        cursors.update("sizens", sdl.CreateSystemCursor(sdl.CURSORSIZENS()))
+        cursors.update("sizenwse", sdl.CreateSystemCursor(sdl.CURSORSIZENWSE()))
+        cursors.update("sizewe", sdl.CreateSystemCursor(sdl.CURSORSIZEWE()))
+        cursors.update("wait", sdl.CreateSystemCursor(sdl.CURSORWAIT()))
+        cursors.update("waitarrow", sdl.CreateSystemCursor(sdl.CURSORWAITARROW()))
     
     fun ref init() ? =>
         // load our gui and events
@@ -279,21 +293,6 @@ class App
         if renderer.is_null() then
         	logAndExit("create renderer error")?
         end
-        
-        // create our cursors
-        
-        cursors.update("arrow", sdl.CreateSystemCursor(sdl.CURSORARROW()))
-        cursors.update("crosshair", sdl.CreateSystemCursor(sdl.CURSORCROSSHAIR()))
-        cursors.update("hand", sdl.CreateSystemCursor(sdl.CURSORHAND()))
-        cursors.update("ibeam", sdl.CreateSystemCursor(sdl.CURSORIBEAM()))
-        cursors.update("no", sdl.CreateSystemCursor(sdl.CURSORNO()))
-        cursors.update("sizeall", sdl.CreateSystemCursor(sdl.CURSORSIZEALL()))
-        cursors.update("sizenesw", sdl.CreateSystemCursor(sdl.CURSORSIZENESW()))
-        cursors.update("sizens", sdl.CreateSystemCursor(sdl.CURSORSIZENS()))
-        cursors.update("sizenwse", sdl.CreateSystemCursor(sdl.CURSORSIZENWSE()))
-        cursors.update("sizewe", sdl.CreateSystemCursor(sdl.CURSORSIZEWE()))
-        cursors.update("wait", sdl.CreateSystemCursor(sdl.CURSORWAIT()))
-        cursors.update("waitarrow", sdl.CreateSystemCursor(sdl.CURSORWAITARROW()))
         
         // initialize SDL Image
         

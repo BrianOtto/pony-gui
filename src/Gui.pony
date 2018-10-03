@@ -321,42 +321,40 @@ class Gui
                             prev = line
                             break
                         else
-                            try
-                                let propValue: String val = prop(1)?.clone().>strip("\"").>replace(placeholder, " ")
-                                
-                                if propKey == "cursor" then
-                                    if not app.cursors.contains(propValue) then
-                                        app.logAndExit("The style command has an invalid \"cursor\" property.", false)?
+                            let propValue: String val = prop(1)?.clone().>strip("\"").>replace(placeholder, " ")
+                            
+                            if propKey == "cursor" then
+                                if not app.cursors.contains(propValue) then
+                                    app.logAndExit("The style command has an invalid \"cursor\" property.", false)?
+                                end
+                            end
+                            
+                            if guiRow.id != "" then
+                                if propKey == "height" then
+                                    if propValue.contains("/") then
+                                        let pvHeight = propValue.split_by("/")
+                                        guiRowState.height = pvHeight(0)?.f32() / pvHeight(1)?.f32()
+                                    else
+                                        guiRowState.height = propValue.f32()
                                     end
                                 end
-                                
-                                if guiRow.id != "" then
-                                    if propKey == "height" then
-                                        if propValue.contains("/") then
-                                            let pvHeight = propValue.split_by("/")
-                                            guiRowState.height = pvHeight(0)?.f32() / pvHeight(1)?.f32()
-                                        else
-                                            guiRowState.height = propValue.f32()
-                                        end
-                                    end
-                                elseif guiCol.id != "" then
-                                    if propKey == "width" then
-                                        if propValue.contains("/") then
-                                            let pvWidth = propValue.split_by("/")
-                                            guiColState.width = pvWidth(0)?.f32() / pvWidth(1)?.f32()
-                                        else
-                                            guiColState.width = propValue.f32()
-                                        end 
-                                    end
-                                elseif guiElementState.id != "" then
-                                    guiElementState.properties.update(propKey, propValue)
-                                elseif guiElementsByGroup.size() > 0 then
-                                    for geByGroup in guiElementsByGroup.values() do
-                                        geByGroup.properties.update(propKey, propValue)
-                                    end
-                                else
-                                    guiElement.properties.update(propKey, propValue)
+                            elseif guiCol.id != "" then
+                                if propKey == "width" then
+                                    if propValue.contains("/") then
+                                        let pvWidth = propValue.split_by("/")
+                                        guiColState.width = pvWidth(0)?.f32() / pvWidth(1)?.f32()
+                                    else
+                                        guiColState.width = propValue.f32()
+                                    end 
                                 end
+                            elseif guiElementState.id != "" then
+                                guiElementState.properties.update(propKey, propValue)
+                            elseif guiElementsByGroup.size() > 0 then
+                                for geByGroup in guiElementsByGroup.values() do
+                                    geByGroup.properties.update(propKey, propValue)
+                                end
+                            else
+                                guiElement.properties.update(propKey, propValue)
                             end
                         end
                     end

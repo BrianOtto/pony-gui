@@ -12,6 +12,7 @@ class App
     
     var gui: Array[GuiRow] = Array[GuiRow]
     var elements: Array[RenderElement] = Array[RenderElement]
+    var elementsByEvent: Map[String, Array[(GuiEvent, RenderElement)]] = Map[String, Array[(GuiEvent, RenderElement)]]
     var events: Map[String, Array[GuiEvent]] = Map[String, Array[GuiEvent]]
     
     var cursors: Map[String, sdl.Cursor] = Map[String, sdl.Cursor]
@@ -59,8 +60,14 @@ class App
         // and their states
         Render(this).load()?
         
+        _getElementsByEvent("out")?
+        _getElementsByEvent("over")?
+        _getElementsByEvent("click")?
+        _getElementsByEvent("data")?
+        
         // event polling
         var poll = true
+        var lastOver: U32 = -1
         
         while poll do
             var more: I32 = 1
@@ -76,20 +83,15 @@ class App
                     var event: sdl.MouseMotionEvent ref = sdl.MouseMotionEvent
                     more = sdl.PollMouseMotionEvent(MaybePointer[sdl.MouseMotionEvent](event))
                     
-                    // Debug.out("x = " + event.x.string())
-                    // Debug.out("y = " + event.y.string())
-                    
-                    var elementsByEvent = _getElementsByEvent("out")?
-                    var reEvents = elementsByEvent.values()
+                    var reEvents = elementsByEvent("out")?.values()
                     
                     while reEvents.has_next() do
                         (let ge, let re) = reEvents.next()?
                         
+                        if re.guid != lastOver then continue end
+                        
                         if (event.x < re.rect.x) or (event.x > (re.rect.x + re.rect.w)) or
                            (event.y < re.rect.y) or (event.y > (re.rect.y + re.rect.h)) then
-
-                            // Debug.out("out = " + re.id)
-
                             _runEventCommands(ge, re)?
                         end
                     end
@@ -97,47 +99,32 @@ class App
                     for rc in elements.values() do
                         if (event.x >= rc.rect.x) and (event.x <= (rc.rect.x + rc.rect.w)) and
                            (event.y >= rc.rect.y) and (event.y <= (rc.rect.y + rc.rect.h)) then
-                            
-                            // Debug.out("over for cursor = " + rc.id)
-                            
-                            if cursors.contains(rc.cursor) then
-                                sdl.SetCursor(cursors(rc.cursor)?)
-                            end
+                            sdl.SetCursor(cursors(rc.cursor)?)
                         end
                     end
                     
-                    elementsByEvent = _getElementsByEvent("over")?
-                    reEvents = elementsByEvent.values()
+                    reEvents = elementsByEvent("over")?.values()
                     
                     while reEvents.has_next() do
                         (let ge, let re) = reEvents.next()?
                         
                         if (event.x >= re.rect.x) and (event.x <= (re.rect.x + re.rect.w)) and
                            (event.y >= re.rect.y) and (event.y <= (re.rect.y + re.rect.h)) then
-
-                            // Debug.out("over = " + re.id)
-
                             _runEventCommands(ge, re)?
+                            lastOver = re.guid
                         end
                     end
                 | sdl.EVENTMOUSEBUTTONUP() =>
                     var event: sdl.MouseButtonEvent ref = sdl.MouseButtonEvent
                     more = sdl.PollMouseButtonEvent(MaybePointer[sdl.MouseButtonEvent](event))
                     
-                    Debug.out("x = " + event.x.string())
-                    Debug.out("y = " + event.y.string())
-                    
-                    let elementsByEvent = _getElementsByEvent("click")?
-                    let reEvents = elementsByEvent.values()
+                    let reEvents = elementsByEvent("click")?.values()
                     
                     while reEvents.has_next() do
                         (let ge, let re) = reEvents.next()?
                         
                         if (event.x >= re.rect.x) and (event.x <= (re.rect.x + re.rect.w)) and
                            (event.y >= re.rect.y) and (event.y <= (re.rect.y + re.rect.h)) then
-
-                            // Debug.out("click = " + re.id)
-
                             _runEventCommands(ge, re)?
                         end
                     end
@@ -148,8 +135,6 @@ class App
                     if event.event == sdl.WINDOWEVENTRESIZED() then
                         windowW = event.data1
                         windowH = event.data2
-                        
-                        // Debug.out("resized to " + windowW.string() + " x " + windowH.string())
                         
                         Render(this).recalc()?
                         
@@ -195,8 +180,6 @@ class App
         logAndExit()?
     
     fun ref reload(fileName: String) ? =>
-        Debug.out("Reloading GUI ...")
-        
         let liveFileHashesClone = liveFileHashes.clone()
         let liveFileHashesOld = liveFileHashesClone.values()
         
@@ -219,8 +202,6 @@ class App
         end
         
         if liveFileHashesDifferent then
-            Debug.out("Reloading Render ...")
-            
             Render(this).load()?
         end
         
@@ -230,7 +211,6 @@ class App
         // initialize SDL
         
         initSDL = sdl.Init(sdl.INITVIDEO())
-        Debug.out("initSDL = " + initSDL.string())
         
         if initSDL != 0 then
             logAndExit("init sdl error")?
@@ -286,7 +266,6 @@ class App
         end
         
         window = sdl.CreateWindow(windowTitle, 100, 100, windowW, windowH, wFlags)
-        Debug.out("window = " + window.usize().string())
         
         if window.is_null() then
         	logAndExit("create window error")?
@@ -296,7 +275,6 @@ class App
         
         let rFlags = sdl.RENDERERACCELERATED() or sdl.RENDERERPRESENTVSYNC()
         renderer = sdl.CreateRenderer(window, -1, rFlags)
-        Debug.out("renderer = " + renderer.usize().string())
         
         if renderer.is_null() then
         	logAndExit("create renderer error")?
@@ -321,7 +299,6 @@ class App
         
         let iFlags = img.INITJPG() or img.INITPNG()
         initIMG = img.Init(iFlags)
-        Debug.out("initIMG = " + initIMG.string())
         
         if initIMG == 0 then
             logAndExit("init img error")?
@@ -334,27 +311,24 @@ class App
         // initialize SDL TTF
         
         initTTF = ttf.Init()
-        Debug.out("initTTF = " + initTTF.string())
         
         if initTTF != 0 then
             logAndExit("init ttf error")?
         end
     
-    fun ref _getElementsByEvent(eventType: String): Array[(GuiEvent, RenderElement)] ? =>
-        var elementsByEvent: Array[(GuiEvent, RenderElement)] = []
+    fun ref _getElementsByEvent(eventType: String) ? =>
+        elementsByEvent.update(eventType, Array[(GuiEvent, RenderElement)])
         
         if events.contains(eventType) then
             for ge in events(eventType)?.values() do
                 for re in elements.values() do
                     if ((ge.id != "") and (ge.id == re.id)) or
                        ((ge.group != "") and (ge.group == re.group)) then
-                        elementsByEvent.push((ge, re))
+                        elementsByEvent(eventType)?.push((ge, re))
                     end
                 end
             end
         end
-        
-        elementsByEvent
     
     fun ref _runEventCommands(ge: GuiEvent, re: CanRunCommands, setData: Bool = false) ? =>
         for command in ge.commands.values() do
@@ -435,15 +409,12 @@ class App
                 // make sure the data event has not already run
                 // otherwise we can get into an endless loop
                 if not setData then
-                    var elementsByEvent = _getElementsByEvent("data")?
-                    var reEvents = elementsByEvent.values()
+                    var reEvents = elementsByEvent("data")?.values()
                     
                     while reEvents.has_next() do
                         (let geSet, let reSet) = reEvents.next()?
 
                         if (re.getId() == reSet.getId()) then
-                            Debug.out("data")
-
                             _runEventCommands(geSet, reSet, true)?
                         end
                     end
@@ -502,7 +473,7 @@ class App
     
     fun ref _runEventStateForElements(id: String, rc: CanRunCommands) ? =>
         for re in elements.values() do
-            let reState = try re.states(id)? else continue end
+            let reState = re.states.get_or_else(id, re)
             
             // make sure the default or group state is only 
             // run on the element that called it
@@ -514,7 +485,7 @@ class App
                 end
             end
             
-            let persist = try reState.ge.properties("persist")? else "0" end
+            let persist = reState.ge.properties.get_or_else("persist", "0")
             
             if persist == "1" then
                 Render(this).recalc(re.id, reState)?

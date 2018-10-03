@@ -49,7 +49,7 @@ class Render
             var guiRowHeight = guiRow.height
             
             if (reRender.id == "") and guiRow.states.contains(id) then
-                let guiRowState = try guiRow.states(id)? else error end
+                let guiRowState = guiRow.states.get_or_else(id, guiRow)
                 guiRowHeight = guiRowState.height
             end
             
@@ -61,7 +61,7 @@ class Render
                 var guiColWidth = guiCol.width
                 
                 if (reRender.id == "") and guiCol.states.contains(id) then
-                    let guiColState = try guiCol.states(id)? else error end
+                    let guiColState = guiCol.states.get_or_else(id, guiCol)
                     guiColWidth = guiColState.width
                 end
                 
@@ -130,6 +130,7 @@ class Render
             re = _renderText(ge, w, h, wTotal, hTotal)?
         end
         
+        // TODO: make sure we have a valid cursor value
         if ge.properties.contains("cursor") then
             re.cursor = ge.properties("cursor")?
         end
@@ -168,6 +169,7 @@ class Render
                 reForStyle = _renderText(geNew, w, h, wTotal, hTotal)?
             end
             
+            // TODO: make sure we have a valid cursor value
             if geNew.properties.contains("cursor") then
                 reForStyle.cursor = geNew.properties("cursor")?
             end
@@ -187,7 +189,7 @@ class Render
         var y: I32 = 0
         
         var radius: I32 = 0
-        let radiusProp = try ge.properties("radius")? else "1/1" end
+        let radiusProp = ge.properties.get_or_else("radius", "1/1")
         
         if radiusProp.contains("/") then
             let radiusParts = radiusProp.split_by("/")
@@ -200,7 +202,7 @@ class Render
         radius = if radius > w then w else radius end
         radius = if radius > h then h else radius end
         
-        let guiElementX = try ge.properties("x")? else "0" end
+        let guiElementX = ge.properties.get_or_else("x", "0")
         
         // TODO: add support for left / right
         if guiElementX == "center" then
@@ -209,7 +211,7 @@ class Render
             x = wTotal + try guiElementX.i32()? else 0 end
         end
         
-        let guiElementY = try ge.properties("y")? else "0" end
+        let guiElementY = ge.properties.get_or_else("y", "0")
         
         // TODO: add support for top / bottom
         if guiElementY == "center" then
@@ -234,7 +236,7 @@ class Render
         
         if border and ge.properties.contains("border-color") then
             // convert to a hexadecimal string
-            var borderColorAsString = "0x" + try ge.properties("border-color")? else "" end
+            var borderColorAsString = "0x" + ge.properties.get_or_else("border-color", "")
             
             // default to 0 for any missing RGB values
             while borderColorAsString.size() < 10 do
@@ -250,7 +252,7 @@ class Render
         
         if ge.properties.contains("fill") then
             // convert to a hexadecimal string
-            var fillAsString = "0x" + try ge.properties("fill")? else "" end
+            var fillAsString = "0x" + ge.properties.get_or_else("fill", "")
             
             // default to 0 for any missing RGB values
             while fillAsString.size() < 10 do
@@ -318,7 +320,7 @@ class Render
         var y2: I32 = 0
         
         var width: I32 = 0
-        let widthProp = try ge.properties("width")? else "1/1" end
+        let widthProp = ge.properties.get_or_else("width", "1/1")
         
         if widthProp.contains("/") then
             let widthParts = widthProp.split_by("/")
@@ -331,7 +333,7 @@ class Render
         width = if width > w then w else width end
         
         var height: I32 = 0
-        let heightProp = try ge.properties("height")? else "1/1" end
+        let heightProp = ge.properties.get_or_else("height", "1/1")
         
         if heightProp.contains("/") then
             let heightParts = heightProp.split_by("/")
@@ -343,7 +345,7 @@ class Render
         
         height = if height > h then h else height end
         
-        let guiElementX = try ge.properties("x")? else "0" end
+        let guiElementX = ge.properties.get_or_else("x", "0")
         
         // TODO: add support for left / right
         if guiElementX == "center" then
@@ -354,7 +356,7 @@ class Render
         
         x2 = x1 + width
         
-        let guiElementY = try ge.properties("y")? else "0" end
+        let guiElementY = ge.properties.get_or_else("y", "0")
         
         // TODO: add support for top / bottom
         if guiElementY == "center" then
@@ -381,7 +383,7 @@ class Render
         
         if border and ge.properties.contains("border-color") then
             // convert to a hexadecimal string
-            var borderColorAsString = "0x" + try ge.properties("border-color")? else "" end
+            var borderColorAsString = "0x" + ge.properties.get_or_else("border-color", "")
             
             // default to 0 for any missing RGB values
             while borderColorAsString.size() < 10 do
@@ -397,7 +399,7 @@ class Render
         
         if ge.properties.contains("fill") then
             // convert to a hexadecimal string
-            var fillAsString = "0x" + try ge.properties("fill")? else "" end
+            var fillAsString = "0x" + ge.properties.get_or_else("fill", "")
             
             // default to 0 for any missing RGB values
             while fillAsString.size() < 10 do
@@ -446,7 +448,7 @@ class Render
         let fontSize = ge.properties("font-size")?.i32()?
         
         // convert to a hexadecimal string
-        var fontColorAsString = "0x" + try ge.properties("font-color")? else "" end
+        var fontColorAsString = "0x" + ge.properties.get_or_else("font-color", "")
         
         // default to 0 for any missing RGB values
         while fontColorAsString.size() < 10 do
@@ -459,7 +461,6 @@ class Render
         
         // load our font
         let font = ttf.OpenFont(fontName, fontSize)
-        Debug.out("font = " + font.usize().string())
         
         if font.is_null() then
             app.logAndExit("load font error")?
@@ -491,7 +492,7 @@ class Render
         
         sdl.QueryTexture(texture, Pointer[U32], Pointer[I32], rect)
         
-        let guiElementX = try guiElement.properties("x")? else "0" end
+        let guiElementX = guiElement.properties.get_or_else("x", "0")
         
         // TODO: add support for left / right
         if guiElementX == "center" then
@@ -501,7 +502,7 @@ class Render
             rect.x = wTotal + try guiElementX.i32()? else 0 end
         end
         
-        let guiElementY = try guiElement.properties("y")? else "0" end
+        let guiElementY = guiElement.properties.get_or_else("y", "0")
         
         // TODO: add support for top / bottom
         if guiElementY == "center" then

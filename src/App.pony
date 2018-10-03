@@ -48,19 +48,19 @@ class App
             end
         end
         
-        // create our cursors
-        cursors.update("arrow", sdl.CreateSystemCursor(sdl.CURSORARROW()))
-        cursors.update("crosshair", sdl.CreateSystemCursor(sdl.CURSORCROSSHAIR()))
-        cursors.update("hand", sdl.CreateSystemCursor(sdl.CURSORHAND()))
-        cursors.update("ibeam", sdl.CreateSystemCursor(sdl.CURSORIBEAM()))
-        cursors.update("no", sdl.CreateSystemCursor(sdl.CURSORNO()))
-        cursors.update("sizeall", sdl.CreateSystemCursor(sdl.CURSORSIZEALL()))
-        cursors.update("sizenesw", sdl.CreateSystemCursor(sdl.CURSORSIZENESW()))
-        cursors.update("sizens", sdl.CreateSystemCursor(sdl.CURSORSIZENS()))
-        cursors.update("sizenwse", sdl.CreateSystemCursor(sdl.CURSORSIZENWSE()))
-        cursors.update("sizewe", sdl.CreateSystemCursor(sdl.CURSORSIZEWE()))
-        cursors.update("wait", sdl.CreateSystemCursor(sdl.CURSORWAIT()))
-        cursors.update("waitarrow", sdl.CreateSystemCursor(sdl.CURSORWAITARROW()))
+        // initialize our list of valid cursors
+        cursors.update("arrow", sdl.Cursor)
+        cursors.update("crosshair", sdl.Cursor)
+        cursors.update("hand", sdl.Cursor)
+        cursors.update("ibeam", sdl.Cursor)
+        cursors.update("no", sdl.Cursor)
+        cursors.update("sizeall", sdl.Cursor)
+        cursors.update("sizenesw", sdl.Cursor)
+        cursors.update("sizens", sdl.Cursor)
+        cursors.update("sizenwse", sdl.Cursor)
+        cursors.update("sizewe", sdl.Cursor)
+        cursors.update("wait", sdl.Cursor)
+        cursors.update("waitarrow", sdl.Cursor)
     
     fun ref init() ? =>
         // load our gui and events
@@ -106,6 +106,7 @@ class App
                         
                         if (event.x < re.rect.x) or (event.x > (re.rect.x + re.rect.w)) or
                            (event.y < re.rect.y) or (event.y > (re.rect.y + re.rect.h)) then
+                            sdl.SetCursor(cursors("arrow")?)
                             _runEventCommands(ge, re)?
                         end
                     end
@@ -293,6 +294,21 @@ class App
         if renderer.is_null() then
         	logAndExit("create renderer error")?
         end
+        
+        // create our cursors
+        
+        cursors.update("arrow", sdl.CreateSystemCursor(sdl.CURSORARROW()))
+        cursors.update("crosshair", sdl.CreateSystemCursor(sdl.CURSORCROSSHAIR()))
+        cursors.update("hand", sdl.CreateSystemCursor(sdl.CURSORHAND()))
+        cursors.update("ibeam", sdl.CreateSystemCursor(sdl.CURSORIBEAM()))
+        cursors.update("no", sdl.CreateSystemCursor(sdl.CURSORNO()))
+        cursors.update("sizeall", sdl.CreateSystemCursor(sdl.CURSORSIZEALL()))
+        cursors.update("sizenesw", sdl.CreateSystemCursor(sdl.CURSORSIZENESW()))
+        cursors.update("sizens", sdl.CreateSystemCursor(sdl.CURSORSIZENS()))
+        cursors.update("sizenwse", sdl.CreateSystemCursor(sdl.CURSORSIZENWSE()))
+        cursors.update("sizewe", sdl.CreateSystemCursor(sdl.CURSORSIZEWE()))
+        cursors.update("wait", sdl.CreateSystemCursor(sdl.CURSORWAIT()))
+        cursors.update("waitarrow", sdl.CreateSystemCursor(sdl.CURSORWAITARROW()))
         
         // initialize SDL Image
         

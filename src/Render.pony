@@ -365,12 +365,6 @@ class Render
         
         y2 = y1 + height
         
-        let antiAliased: Bool = try
-            if ge.properties("anti-aliased")? == "1" then true else false end
-        else
-            true // default to true
-        end
-        
         let border: Bool = try
             if ge.properties("border")? == "1" then true else false end
         else
@@ -408,25 +402,14 @@ class Render
             // convert to a unsigned integer
             let fill = try fillAsString.u32()? else 0 end
             
-            if antiAliased and not ge.properties.contains("border-color") then
-                borderColor = fill
-            end
-            
             callbacks.push(
                 gfx.BoxColor~apply(app.renderer, x1.i16(), y1.i16(), x2.i16(), y2.i16(), fill)
             )
         end
         
-        // TODO: does GFX provide an anti-aliased function ?
-        if antiAliased then
-            callbacks.push(
-                gfx.RectangleColor~apply(app.renderer, x1.i16(), y1.i16(), x2.i16(), y2.i16(), borderColor)
-            )
-        else
-            callbacks.push(
-                gfx.RectangleColor~apply(app.renderer, x1.i16(), y1.i16(), x2.i16(), y2.i16(), borderColor)
-            )
-        end
+        callbacks.push(
+            gfx.RectangleColor~apply(app.renderer, x1.i16(), y1.i16(), x2.i16(), y2.i16(), borderColor)
+        )
         
         let re = RenderElement
         

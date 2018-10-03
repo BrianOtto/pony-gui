@@ -202,7 +202,6 @@ class Render
         
         let guiElementX = ge.properties.get_or_else("x", "0")
         
-        // TODO: add support for left / right
         match guiElementX
         | "left" =>
             x = wTotal

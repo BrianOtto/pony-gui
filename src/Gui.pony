@@ -125,9 +125,12 @@ class Gui
                             | "id" =>
                                 guiRow.id = value
                             | "height" =>
-                                // TODO: allow pixel values (i.e. they will not have the "/")
-                                let height = value.split_by("/")
-                                guiRow.height = height(0)?.f32() / height(1)?.f32()
+                                if value.contains("/") then
+                                    let height = value.split_by("/")
+                                    guiRow.height = height(0)?.f32() / height(1)?.f32()
+                                else
+                                    guiRow.height = value.f32()
+                                end
                             else
                                 error
                             end
@@ -162,9 +165,12 @@ class Gui
                             | "id" =>
                                 guiCol.id = value
                             | "width" =>
-                                // TODO: allow pixel values (i.e. they will not have the "/")
-                                let width = value.split_by("/")
-                                guiCol.width = width(0)?.f32() / width(1)?.f32()
+                                if value.contains("/") then
+                                    let width = value.split_by("/")
+                                    guiCol.width = width(0)?.f32() / width(1)?.f32()
+                                else
+                                    guiCol.width = value.f32()
+                                end
                             else
                                 error
                             end
@@ -318,15 +324,29 @@ class Gui
                             try
                                 let propValue: String val = prop(1)?.clone().>strip("\"").>replace(placeholder, " ")
                                 
+                                if propKey == "cursor" then
+                                    if not app.cursors.contains(propValue) then
+                                        app.logAndExit("The style command has an invalid \"cursor\" property.", false)?
+                                    end
+                                end
+                                
                                 if guiRow.id != "" then
                                     if propKey == "height" then
-                                        let pvHeight = propValue.split_by("/")
-                                        guiRowState.height = pvHeight(0)?.f32() / pvHeight(1)?.f32()
+                                        if propValue.contains("/") then
+                                            let pvHeight = propValue.split_by("/")
+                                            guiRowState.height = pvHeight(0)?.f32() / pvHeight(1)?.f32()
+                                        else
+                                            guiRowState.height = propValue.f32()
+                                        end
                                     end
                                 elseif guiCol.id != "" then
                                     if propKey == "width" then
-                                        let pvWidth = propValue.split_by("/")
-                                        guiColState.width = pvWidth(0)?.f32() / pvWidth(1)?.f32()
+                                        if propValue.contains("/") then
+                                            let pvWidth = propValue.split_by("/")
+                                            guiColState.width = pvWidth(0)?.f32() / pvWidth(1)?.f32()
+                                        else
+                                            guiColState.width = propValue.f32()
+                                        end 
                                     end
                                 elseif guiElementState.id != "" then
                                     guiElementState.properties.update(propKey, propValue)

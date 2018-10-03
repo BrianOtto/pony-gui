@@ -130,7 +130,6 @@ class Render
             re = _renderText(ge, w, h, wTotal, hTotal)?
         end
         
-        // TODO: make sure we have a valid cursor value
         if ge.properties.contains("cursor") then
             re.cursor = ge.properties("cursor")?
         end
@@ -169,7 +168,6 @@ class Render
                 reForStyle = _renderText(geNew, w, h, wTotal, hTotal)?
             end
             
-            // TODO: make sure we have a valid cursor value
             if geNew.properties.contains("cursor") then
                 reForStyle.cursor = geNew.properties("cursor")?
             end

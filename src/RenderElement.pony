@@ -24,6 +24,8 @@ class RenderElement is ICanRunCommands
         re.guid = guid
         re.id = id
         re.group = group
+        re.modCode = modCode
+        re.keyCode = keyCode
         re.ge = ge.clone()
         re.geState = geState.clone()
         re.cursor = cursor

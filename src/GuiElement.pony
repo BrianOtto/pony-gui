@@ -16,6 +16,8 @@ class GuiElement
         ge.guid = guid
         ge.id = id
         ge.group = group
+        ge.modCode = modCode
+        ge.keyCode = keyCode
         ge.command = command
         ge.properties = properties.clone()
         

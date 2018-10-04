@@ -90,6 +90,7 @@ class App
         // event polling
         var poll = true
         var lastOver: U32 = -1
+        var lastDown: U32 = -1
         
         while poll do
             var more: I32 = 1
@@ -105,14 +106,25 @@ class App
                     var event: sdl.KeyboardEvent ref = sdl.KeyboardEvent
                     more = sdl.PollKeyboardEvent(MaybePointer[sdl.KeyboardEvent](event))
                     
-                    Debug.out("keydown = " + elementsByEvent("keydown")?.size().string())
-                    
                     var reEvents = elementsByEvent("keydown")?.values()
                     
                     while reEvents.has_next() do
                         (let ge, let re) = reEvents.next()?
                         
-                        Debug.out("keycode = " + re.keyCode.string())
+                        let keyToSym = keys.get_or_else(re.keyCode, 0)
+                        
+                        if (keyToSym == event.keysym._2) then
+                            _runEventCommands(ge, re)?
+                        end
+                    end
+                | sdl.EVENTKEYUP() =>
+                    var event: sdl.KeyboardEvent ref = sdl.KeyboardEvent
+                    more = sdl.PollKeyboardEvent(MaybePointer[sdl.KeyboardEvent](event))
+                    
+                    var reEvents = elementsByEvent("keyup")?.values()
+                    
+                    while reEvents.has_next() do
+                        (let ge, let re) = reEvents.next()?
                         
                         let keyToSym = keys.get_or_else(re.keyCode, 0)
                         
@@ -168,19 +180,30 @@ class App
                         if (event.x >= re.rect.x) and (event.x <= (re.rect.x + re.rect.w)) and
                            (event.y >= re.rect.y) and (event.y <= (re.rect.y + re.rect.h)) then
                             _runEventCommands(ge, re)?
+                            lastDown = re.guid
                         end
                     end
                 | sdl.EVENTMOUSEBUTTONUP() =>
                     var event: sdl.MouseButtonEvent ref = sdl.MouseButtonEvent
                     more = sdl.PollMouseButtonEvent(MaybePointer[sdl.MouseButtonEvent](event))
                     
-                    let reEvents = elementsByEvent("mouseclick")?.values()
+                    var reEvents = elementsByEvent("mouseup")?.values()
                     
                     while reEvents.has_next() do
                         (let ge, let re) = reEvents.next()?
                         
                         if (event.x >= re.rect.x) and (event.x <= (re.rect.x + re.rect.w)) and
                            (event.y >= re.rect.y) and (event.y <= (re.rect.y + re.rect.h)) then
+                            _runEventCommands(ge, re)?
+                        end
+                    end
+                    
+                    reEvents = elementsByEvent("mouseclick")?.values()
+                    
+                    while reEvents.has_next() do
+                        (let ge, let re) = reEvents.next()?
+                        
+                        if re.guid == lastDown then
                             _runEventCommands(ge, re)?
                         end
                     end

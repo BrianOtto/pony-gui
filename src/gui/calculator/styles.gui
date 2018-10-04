@@ -11,6 +11,7 @@ style group "button"
     y "center"
 
 style group "button-text"
+    cursor "hand"
     x "center"
     y "center"
 

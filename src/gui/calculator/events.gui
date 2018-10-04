@@ -13,3 +13,6 @@ event group "button" type "mouseclick"
 event group "button" type "keydown"
     run state "button-down"
     run state "button-click"
+
+event group "button" type "keyup"
+    run state "default"

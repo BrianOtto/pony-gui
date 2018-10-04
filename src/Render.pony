@@ -137,6 +137,8 @@ class Render
         re.ge = ge
         re.guid = ge.guid
         re.group = ge.group
+        re.modCode = ge.modCode
+        re.keyCode = ge.keyCode
         re.geState = ge.clone()
         re.geState.id = "default"
         
@@ -175,6 +177,8 @@ class Render
             reForStyle.ge = geNew
             reForStyle.guid = geNew.guid
             reForStyle.group = geNew.group
+            reForStyle.modCode = geNew.modCode
+            reForStyle.keyCode = geNew.keyCode
             reForStyle.geState = styleState
             
             re.states.insert(reForStyle.geState.id, reForStyle)?

@@ -1,3 +1,9 @@
+style id "screen"
+    width "38/40"
+    height "8/10"
+    x "center"
+    y "center"
+    
 style group "button"
     width "8/10"
     height "8/10"
@@ -11,3 +17,9 @@ style group "button-text"
 style group "button" state "button-over"
     fill "C0C0C0"
     cursor "hand"
+
+style group "button" state "button-down"
+    fill "909090"
+
+style group "button" state "button-click"
+    fill "C0C0C0"

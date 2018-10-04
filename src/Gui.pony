@@ -40,6 +40,18 @@ class Gui
             file = OpenFile(filePath) as File
         end
         
+        let eventTypes = Array[String](9)
+        
+        eventTypes.push("data")
+        eventTypes.push("keydown")
+        eventTypes.push("keyup")
+        eventTypes.push("mouseclick")
+        eventTypes.push("mousedown")
+        eventTypes.push("mouseout")
+        eventTypes.push("mouseover")
+        eventTypes.push("mouseup")
+        eventTypes.push("resize")
+        
         var lineCount: I32 = 0
         let lineRegex = Regex("^((app|row|col|draw|text|load|style|event) .*)|(--.*)|($)")?
         
@@ -211,6 +223,10 @@ class Gui
                                 guiElement.id = value
                             | "group" =>
                                 guiElement.group = value
+                            | "mod" =>
+                                guiElement.modCode = value
+                            | "key" =>
+                                guiElement.keyCode = value
                             else
                                 guiElement.properties.update(key, value)
                             end
@@ -378,8 +394,6 @@ class Gui
                     var import = false
                     var guiEvent = GuiEvent
                     
-                    var guiEventsByGroup = Array[GuiEvent]
-                    
                     while gp.has_next() do
                         let key = gp.next()?
                         
@@ -408,7 +422,6 @@ class Gui
                                             if key == "group" then
                                                 if element.group == value then
                                                     guiEvent.group = element.group
-                                                    guiEventsByGroup.push(guiEvent)
                                                 end
                                             else
                                                 if element.id == value then
@@ -428,13 +441,11 @@ class Gui
                                     end
                                 end
                             | "type" =>
-                                if (key == "group") and (guiEventsByGroup.size() > 0) then
-                                    for geByGroup in guiEventsByGroup.values() do
-                                        geByGroup.eventType = value
-                                    end
-                                else
-                                    guiEvent.eventType = value
+                                if not eventTypes.contains(value, {(a, b) => a == b}) then
+                                    app.logAndExit("The event command has an invalid \"type\" property.", false)?
                                 end
+                                
+                                guiEvent.eventType = value
                             else
                                 error
                             end
@@ -443,17 +454,12 @@ class Gui
                     
                     if import then
                         continue
-                    elseif (guiEvent.id == "") and (guiEvent.eventType != "resize") and
-                           (guiEventsByGroup.size() == 0) then
+                    elseif (guiEvent.id == "") and (guiEvent.group == "") and (guiEvent.eventType != "resize") then
                         app.logAndExit("The event command has a missing or invalid \"id\" property.", false)?
                     end
                     
                     if guiEvent.eventType == "" then
                         app.logAndExit("The event command has a missing \"type\" property.", false)?
-                    end
-                    
-                    if guiEventsByGroup.size() == 0 then
-                        guiEventsByGroup.push(guiEvent)
                     end
                     
                     while lines.has_next() do
@@ -524,18 +530,14 @@ class Gui
                             gec.elseVar = elseVar.clone().>strip("\"").>replace(placeholder, " ")
                             gec.elseVal = elseVal.clone().>strip("\"").>replace(placeholder, " ")
                             
-                            for geByGroup in guiEventsByGroup.values() do
-                                geByGroup.commands.push(gec)
-                            end
+                            guiEvent.commands.push(gec)
                         end
                     end
                     
-                    for geByGroup in guiEventsByGroup.values() do
-                        if app.events.contains(geByGroup.eventType) then
-                            app.events(geByGroup.eventType)?.push(geByGroup)
-                        else
-                            app.events.insert(geByGroup.eventType, [geByGroup])?
-                        end
+                    if app.events.contains(guiEvent.eventType) then
+                        app.events(guiEvent.eventType)?.push(guiEvent)
+                    else
+                        app.events.insert(guiEvent.eventType, [guiEvent])?
                     end
                 else
                     error

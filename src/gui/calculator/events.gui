@@ -1,5 +1,15 @@
-event group "button" type "over"
+event group "button" type "mouseover"
     run state "button-over"
 
-event group "button" type "out"
+event group "button" type "mouseout"
     run state "default"
+
+event group "button" type "mousedown"
+    run state "button-down"
+
+event group "button" type "mouseclick"
+    run state "button-click"
+
+event group "button" type "keydown"
+    run state "button-down"
+    run state "button-click"

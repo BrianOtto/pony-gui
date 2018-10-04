@@ -1,18 +1,18 @@
-event id "img-logo" type "over"
+event id "img-logo" type "mouseover"
     run state "logo-over" when clicked eq "0"
     run state "logo-clicked-over" when clicked eq "1"
 
-event id "img-logo" type "out"
+event id "img-logo" type "mouseout"
     run state "default" when clicked eq "0" else state "logo-clicked"
 
-event id "img-logo" type "click"
+event id "img-logo" type "mouseclick"
     set clicked "1" when clicked eq "0" else clicked "0"
     run state "logo-over" when clicked eq "0" else state "logo-clicked-over"
 
 event id "img-logo" type "data"
     set updated "1"
 
-event id "txt-header" type "click"
+event id "txt-header" type "mouseclick"
     run state "header-clicked"
     run api "myMethod"
 

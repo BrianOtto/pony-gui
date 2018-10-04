@@ -4,6 +4,8 @@ class GuiElement
     var guid: U32 = -1
     var id: String = ""
     var group: String = ""
+    var modCode: String = ""
+    var keyCode: String = ""
     var command: String = ""
     var properties: Map[String, String] = Map[String, String]
     var states: Map[String, GuiElement] = Map[String, GuiElement]

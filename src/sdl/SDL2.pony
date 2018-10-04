@@ -286,7 +286,17 @@ struct CommonEvent
     new create() => None
 
 struct KeyboardEvent
-    // TODO
+    var eventType: U32 = 0
+    var timestamp: U32 = 0
+    var windowID: U32 = 0
+    var state: U8 = 0
+    var keyrepeat: U8 = 0
+    var keysym: (
+        I32, // scancode
+        I32, // sym
+        U16, // mod
+        U32  // unused
+    ) = (0, 0, 0, 0)
     
     new create() => None
 
@@ -441,6 +451,10 @@ primitive PeekEvent
 
 primitive PollCommonEvent
     fun apply(event: MaybePointer[CommonEvent]): I32 =>
+        @SDL_PollEvent[I32](event)
+
+primitive PollKeyboardEvent
+    fun apply(event: MaybePointer[KeyboardEvent]): I32 =>
         @SDL_PollEvent[I32](event)
 
 primitive PollMouseButtonEvent

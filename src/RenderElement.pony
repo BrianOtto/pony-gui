@@ -7,6 +7,8 @@ class RenderElement is ICanRunCommands
     var guid: U32 = -1
     var id: String = ""
     var group: String = ""
+    var modCode: String = ""
+    var keyCode: String = ""
     var ge: GuiElement = GuiElement
     var geState: GuiElement = GuiElement
     var cursor: String = "arrow"

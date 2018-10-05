@@ -507,6 +507,32 @@ class Render
             rect.x = wTotal + try guiElementX.i32()? else 0 end
         end
         
+        let guiElementPR = guiElement.properties.get_or_else("padding-right", "0")
+        var pr: I32 = 0
+        
+        if guiElementPR.contains("/") then
+            let prParts = guiElementPR.split_by("/")
+            let prAsPct = try prParts(0)?.f32() / prParts(1)?.f32() else 0 end
+            pr = (app.windowW.f32() * prAsPct).i32()
+        else
+            pr = try guiElementPR.i32()? else 0 end
+        end
+        
+        rect.x = rect.x - pr
+        
+        let guiElementPL = guiElement.properties.get_or_else("padding-left", "0")
+        var pl: I32 = 0
+        
+        if guiElementPL.contains("/") then
+            let plParts = guiElementPL.split_by("/")
+            let plAsPct = try plParts(0)?.f32() / plParts(1)?.f32() else 0 end
+            pl = (app.windowW.f32() * plAsPct).i32()
+        else
+            pl = try guiElementPL.i32()? else 0 end
+        end
+        
+        rect.x = rect.x + pl
+        
         let guiElementY = guiElement.properties.get_or_else("y", "0")
         rect.h = if rect.h > h then h else rect.h end
         
@@ -520,5 +546,31 @@ class Render
         else
             rect.y = hTotal + try guiElementY.i32()? else 0 end
         end
+        
+        let guiElementPT = guiElement.properties.get_or_else("padding-top", "0")
+        var pt: I32 = 0
+        
+        if guiElementPT.contains("/") then
+            let ptParts = guiElementPT.split_by("/")
+            let ptAsPct = try ptParts(0)?.f32() / ptParts(1)?.f32() else 0 end
+            pt = (app.windowH.f32() * ptAsPct).i32()
+        else
+            pt = try guiElementPT.i32()? else 0 end
+        end
+        
+        rect.y = rect.y + pt
+        
+        let guiElementPB = guiElement.properties.get_or_else("padding-bottom", "0")
+        var pb: I32 = 0
+        
+        if guiElementPB.contains("/") then
+            let pbParts = guiElementPB.split_by("/")
+            let pbAsPct = try pbParts(0)?.f32() / pbParts(1)?.f32() else 0 end
+            pb = (app.windowH.f32() * pbAsPct).i32()
+        else
+            pb = try guiElementPB.i32()? else 0 end
+        end
+        
+        rect.y = rect.y - pb
         
         rect

@@ -3,6 +3,13 @@ style id "screen"
     height "8/10"
     x "center"
     y "center"
+
+style id "screen-text"
+    height "8/10"
+    x "right"
+    y "center"
+    font-size "24"
+    padding-right "2/40"
     
 style group "button"
     width "8/10"

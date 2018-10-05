@@ -52,7 +52,7 @@ class Gui
         eventTypes.push("mouseup")
         eventTypes.push("resize")
         
-        var lineCount: I32 = 0
+        var lineCount: U32 = 0
         let lineRegex = Regex("^((app|row|col|draw|text|load|style|event) .*)|(--.*)|($)")?
         
         var rowCounter: USize = 0

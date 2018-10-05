@@ -1,5 +1,10 @@
 use "debug"
 
 class Api
-    fun apply(run: String, ge: GuiEvent, re: CanRunCommands, app: App) =>
+    var app: App
+    
+    new create(myApp: App) =>
+        app = myApp
+    
+    fun ref apply(run: String, ge: GuiEvent, re: CanRunCommands) =>
         Debug.out("api call = " + run + " / " + ge.eventType + " / " + re.getId())

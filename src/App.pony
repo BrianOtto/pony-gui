@@ -203,10 +203,16 @@ class App
                     while reEvents.has_next() do
                         (let ge, let re) = reEvents.next()?
                         
-                        if re.guid == lastDown then
+                        if (re.guid == lastDown) or (
+                               (lastDown == -1) and
+                               (event.x >= re.rect.x) and (event.x <= (re.rect.x + re.rect.w)) and
+                               (event.y >= re.rect.y) and (event.y <= (re.rect.y + re.rect.h))
+                           ) then
                             _runEventCommands(ge, re)?
                         end
                     end
+                    
+                    lastDown = -1
                 | sdl.EVENTWINDOWEVENT() =>
                     var event: sdl.WindowEvent ref = sdl.WindowEvent
                     more = sdl.PollWindowEvent(MaybePointer[sdl.WindowEvent](event))
@@ -515,7 +521,7 @@ class App
                     | "state" =>
                         try _runEventState(runId, re)? else continue end
                     | "api" =>
-                        Api(runId, ge, re, this)
+                        Api(this)(runId, ge, re)
                     end
                 end
             end

@@ -1,10 +1,10 @@
-style id "screen"
+style id "screen-border"
     width "38/40"
     height "8/10"
     x "center"
     y "center"
 
-style id "screen-text"
+style id "screen"
     height "8/10"
     x "right"
     y "center"

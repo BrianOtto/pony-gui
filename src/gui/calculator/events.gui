@@ -9,10 +9,12 @@ event group "button" type "mousedown"
 
 event group "button" type "mouseclick"
     run state "button-click"
+    run api "displayNumber"
 
 event group "button" type "keydown"
     run state "button-down"
     run state "button-click"
+    run api "displayNumber"
 
 event group "button" type "keyup"
     run state "default"

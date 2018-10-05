@@ -2,8 +2,8 @@ app height "600" width "400" title "Calculator" flags "resizeable"
 
 row height "1/6"
     col width "1/1"
-        draw shape "rectangle" id "screen"
-        text value "0" id "screen-text"
+        draw shape "rectangle" id "screen-border"
+        text value "0" id "screen"
 
 row height "1/6"
     col width "1/4"

@@ -16,7 +16,7 @@ class App
     var events: Map[String, Array[GuiEvent]] = Map[String, Array[GuiEvent]]
     
     var cursors: Map[String, sdl.Cursor] = Map[String, sdl.Cursor]
-    var keys: Map[String, I32] = Map[String, I32]
+    var keys: Map[String, (I32, Array[U16])] = Map[String, (I32, Array[U16])]
     
     var initSDL: U32 = 0
     var initIMG: I32 = 0
@@ -111,9 +111,13 @@ class App
                     while reEvents.has_next() do
                         (let ge, let re) = reEvents.next()?
                         
-                        let keyToSym = keys.get_or_else(re.keyCode, 0)
+                        // TODO: get custom modifiers working
+                        //       e.g. mod "ALT" key "F"
                         
-                        if (keyToSym == event.keysym._2) then
+                        (let reSym, let reMods) = keys.get_or_else(re.keyCode, (-1, [0x0000]))
+                        (let eventSC, let eventSym, let eventMod, let eventNA) = event.keysym
+                        
+                        if ((reSym == eventSym) and (reMods.contains(eventMod))) then
                             _runEventCommands(ge, re)?
                         end
                     end
@@ -126,9 +130,13 @@ class App
                     while reEvents.has_next() do
                         (let ge, let re) = reEvents.next()?
                         
-                        let keyToSym = keys.get_or_else(re.keyCode, 0)
+                        // TODO: get custom modifiers working
+                        //       e.g. mod "ALT" key "F"
                         
-                        if (keyToSym == event.keysym._2) then
+                        (let reSym, let reMods) = keys.get_or_else(re.keyCode, (-1, [0x0000]))
+                        (let eventSC, let eventSym, let eventMod, let eventNA) = event.keysym
+                        
+                        if ((reSym == eventSym) and (reMods.contains(eventMod))) then
                             _runEventCommands(ge, re)?
                         end
                     end

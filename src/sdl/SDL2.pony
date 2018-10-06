@@ -128,6 +128,64 @@ primitive INITTIMER
 primitive INITVIDEO
     fun apply(): U32 => 0x00000020 // implies INIT_EVENTS
 
+// Flags - Key Mod
+
+primitive KEYMODALT
+    fun apply(): U16 => KEYMODLALT() or KEYMODRALT()
+
+primitive KEYMODCAPS
+    fun apply(): U16 => 0x2000
+
+primitive KEYMODCTRL
+    fun apply(): U16 => KEYMODLCTRL() or KEYMODRCTRL()
+
+primitive KEYMODGUI
+    fun apply(): U16 => KEYMODLGUI() or KEYMODRGUI()
+
+primitive KEYMODLALT
+    fun apply(): U16 => 0x0100
+
+primitive KEYMODLCTRL
+    fun apply(): U16 => 0x0040
+
+primitive KEYMODLGUI
+    fun apply(): U16 => 0x0400
+
+primitive KEYMODLSHIFT
+    fun apply(): U16 => 0x0001
+
+primitive KEYMODMODE
+    fun apply(): U16 => 0x4000
+
+primitive KEYMODNONE
+    fun apply(): U16 => 0x0000
+
+primitive KEYMODNUM
+    fun apply(): U16 => 0x1000
+
+primitive KEYMODRALT
+    fun apply(): U16 => 0x0200
+
+primitive KEYMODRCTRL
+    fun apply(): U16 => 0x0080
+
+primitive KEYMODRESERVED
+    fun apply(): U16 => 0x8000
+
+primitive KEYMODRGUI
+    fun apply(): U16 => 0x0800
+
+primitive KEYMODRSHIFT
+    fun apply(): U16 => 0x0002
+
+primitive KEYMODSHIFT
+    fun apply(): U16 => KEYMODLSHIFT() or KEYMODRSHIFT()
+
+// Flags - Mask
+
+primitive MASKSCANCODE
+    fun apply(): I32 => 0x40000000
+
 // Flags - Renderer
 
 primitive RENDERERACCELERATED

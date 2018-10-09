@@ -1,4 +1,5 @@
 use "debug"
+use "../"
 
 class Api
     var screen: RenderElement = RenderElement

@@ -2,6 +2,7 @@ use "collections"
 use "crypto"
 use "debug"
 use "time"
+use "api"
 
 use sdl = "sdl"
 use img = "sdl-image"

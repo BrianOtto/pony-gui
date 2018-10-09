@@ -16,19 +16,20 @@ REM The command line parameters to use
 REM --live <filename> = The application will reload GUI changes as it runs
 SET "CMD=" REM --live ../src/gui/%APP%/layout.gui
 
-REM Clean up the output directory
+REM Clean up the OUT and API directories
 FOR %%i IN (%OUT%\*) DO IF NOT %%i == %OUT%\.gitignore DEL /Q %%i
+FOR %%i IN (%SRC%\api\*) DO IF NOT %%i == %SRC%\api\.gitignore DEL /Q %%i
 
 ECHO.
 ECHO Building Pony-GUI ...
 ECHO.
 
-REM Copy the application API to the source directory
-XCOPY /Y %SRC%\gui\%APP%\Api.pony %SRC% > NUL 2>&1
+REM Copy the application classes to the API directory
+XCOPY /Y %SRC%\gui\%APP%\*.pony %SRC%\api > NUL 2>&1
 
 CD %SRC%
 
-ponyc -d -p %SRC% -o ..\%OUT% -b %BIN%
+ponyc -d -o ..\%OUT% -b %BIN%
 
 CD ..\
 

@@ -10,6 +10,8 @@ use ttf = "sdl-ttf"
 class App
     var out: Env
     
+    var api: Api = Api
+    
     var gui: Array[GuiRow] = Array[GuiRow]
     var elements: Array[RenderElement] = Array[RenderElement]
     var elementsByEvent: Map[String, Array[(GuiEvent, RenderElement)]] = Map[String, Array[(GuiEvent, RenderElement)]]
@@ -457,7 +459,7 @@ class App
                             re.setDataValue(command.whenVar, "0")
                         end
                         
-                        whenVarValue = re.getDataValue(command.whenVar)?
+                        whenVarValue = re.getDataValue(command.whenVar)
                     end
                     
                     match command.whenCon
@@ -529,7 +531,7 @@ class App
                     | "state" =>
                         try _runEventState(runId, re)? else continue end
                     | "api" =>
-                        Api(this)(runId, ge, re)
+                        api(runId, ge, re, this)
                     end
                 end
             end

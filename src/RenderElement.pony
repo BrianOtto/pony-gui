@@ -54,5 +54,5 @@ class RenderElement is ICanRunCommands
         
         _data.update(key, value)
     
-    fun ref getDataValue(key: String): String ? =>
-        _data(key)?
+    fun ref getDataValue(key: String, orElse: String = ""): String =>
+        _data.get_or_else(key, orElse)

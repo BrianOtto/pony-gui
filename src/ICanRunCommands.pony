@@ -7,4 +7,4 @@ interface ICanRunCommands
     
     fun ref setDataValue(key: String, value: String): None
     
-    fun ref getDataValue(key: String): String ?
+    fun ref getDataValue(key: String, orElse: String = ""): String

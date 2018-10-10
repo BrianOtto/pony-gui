@@ -8,5 +8,6 @@ The supported extensions are ...
 * SDL-GFX
 * SDL-Image
 * SDL-TTF
+* WebM Video
 
 It has been tested on Windows 10 only.

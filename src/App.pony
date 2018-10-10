@@ -243,6 +243,8 @@ class App
                 | sdl.EVENTQUIT() =>
                     more = 0
                     poll = false
+                    
+                    logAndExit()?
                 else
                     var event: sdl.CommonEvent ref = sdl.CommonEvent
                     more = sdl.PollCommonEvent(MaybePointer[sdl.CommonEvent](event))

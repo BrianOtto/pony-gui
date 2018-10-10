@@ -7,6 +7,7 @@ use "api"
 use sdl = "sdl"
 use img = "sdl-image"
 use ttf = "sdl-ttf"
+use vpx = "vpx"
 
 class App
     var out: Env

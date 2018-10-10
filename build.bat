@@ -42,6 +42,7 @@ REM Copy the DLLs to the output directory
 XCOPY /Y %SRC%\sdl\*.dll %OUT% 1>NUL
 XCOPY /Y %SRC%\sdl-gfx\*.dll %OUT% 1>NUL
 XCOPY /Y %SRC%\sdl-ttf\*.dll %OUT% 1>NUL
+XCOPY /Y %SRC%\vpx\*.dll %OUT% 1>NUL
 
 REM This must be copied after TTF so that we get the newer zlib1.dll
 XCOPY /Y %SRC%\sdl-image\*.dll %OUT% 1>NUL

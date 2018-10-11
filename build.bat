@@ -47,7 +47,10 @@ IF %ERRORLEVEL% NEQ 0 (
 )
 
 REM Set the EXE subsytem to Windows, since Pony defaults to Console
-EDITBIN /SUBSYSTEM:WINDOWS "%OUT%\%BIN%.exe" 1>NUL
+REM Unless we are compiling with the debug option
+ECHO %OPT% | findstr /i /c:"-d" >NUL || (
+    EDITBIN /SUBSYSTEM:WINDOWS "%OUT%\%BIN%.exe" 1>NUL
+)
 
 REM Get the last exit code and stop the batch script when there's an error
 IF %ERRORLEVEL% NEQ 0 (

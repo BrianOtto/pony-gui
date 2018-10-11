@@ -1,7 +1,13 @@
 use "collections"
 
+use win32 = "win32"
+
 actor Main
     new create(env: Env) =>
+        ifdef windows then
+            win32.SetProcessDpiAwareness(2)
+        end
+        
         try
             var settings = Map[String, String]
             

@@ -46,6 +46,14 @@ IF %ERRORLEVEL% NEQ 0 (
     GOTO :EOF
 )
 
+REM Set the EXE subsytem to Windows, since Pony defaults to Console
+EDITBIN /SUBSYSTEM:WINDOWS "%OUT%\%BIN%.exe" 1>NUL
+
+REM Get the last exit code and stop the batch script when there's an error
+IF %ERRORLEVEL% NEQ 0 (
+    GOTO :EOF
+)
+
 REM Copy the DLLs to the output directory
 XCOPY /Y "%SRC%\sdl\*.dll" "%OUT%" 1>NUL
 XCOPY /Y "%SRC%\sdl-gfx\*.dll" "%OUT%" 1>NUL

@@ -460,6 +460,10 @@ primitive FreeSurface
     fun apply(surface: Pointer[Surface]): None =>
         @SDL_FreeSurface[None](surface)
 
+primitive GetDisplayDPI
+    fun apply(displayIndex: U32, dpi: DPI): U32 =>
+        @SDL_GetDisplayDPI[U32](displayIndex, addressof dpi.d, addressof dpi.h, addressof dpi.v)
+
 primitive GetError
     fun apply(): Pointer[U8] =>
         @SDL_GetError[Pointer[U8]]()
@@ -502,6 +506,13 @@ primitive Quit
         @SDL_Quit[None]()
 
 // Custom (for Pony or platform specific issues)
+
+struct DPI
+    var d: F32 = 0
+    var h: F32 = 0
+    var v: F32 = 0
+    
+    new create() => None
 
 primitive PeekEvent
     fun apply(event: MaybePointer[CommonEvent]): I32 =>

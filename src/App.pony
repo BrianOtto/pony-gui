@@ -7,7 +7,6 @@ use "api"
 use sdl = "sdl"
 use img = "sdl-image"
 use ttf = "sdl-ttf"
-use vpx = "vpx"
 
 class App
     var out: Env
@@ -315,6 +314,10 @@ class App
             logAndExit("init sdl error")?
         end
         
+        // adjust our width and height by the current DPI
+        
+        _getDisplayDPI()
+        
         // create our window
         
         var wFlags = sdl.WINDOWSHOWN()
@@ -322,6 +325,7 @@ class App
         for flag in windowFlags.values() do
             match flag
             | "allowhighdpi" =>
+                // see https://bugzilla.libsdl.org/show_bug.cgi?id=3281 for Windows issues
                 wFlags = wFlags or sdl.WINDOWALLOWHIGHDPI()
             | "alwaysontop" =>
                 wFlags = wFlags or sdl.WINDOWALWAYSONTOP()
@@ -413,6 +417,16 @@ class App
         
         if initTTF != 0 then
             logAndExit("init ttf error")?
+        end
+    
+    fun ref _getDisplayDPI() =>
+        let dpi = sdl.DPI
+        
+        if sdl.GetDisplayDPI(0, dpi) == 0 then
+            let dpiDefault = ifdef osx then 72.0 else 96.0 end
+            
+            windowW = (windowW.f32() * (dpi.h / dpiDefault)).i32()
+            windowH = (windowH.f32() * (dpi.h / dpiDefault)).i32()
         end
     
     fun ref _getElementsByEvent(eventType: String) ? =>

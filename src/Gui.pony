@@ -65,7 +65,7 @@ class Gui
         
         while lines.has_next() do
             if prev == "" then
-                line = lines.next().clone().>strip()
+                line = lines.next()?.clone().>strip()
                 
                 lineCount = lineCount + 1
             else
@@ -320,7 +320,7 @@ class Gui
                     guiElementState.properties.insert("persist", persist)?
                     
                     while lines.has_next() do
-                        line = lines.next().clone().>strip()
+                        line = lines.next()?.clone().>strip()
                         
                         lineCount = lineCount + 1
                         
@@ -463,7 +463,7 @@ class Gui
                     end
                     
                     while lines.has_next() do
-                        line = lines.next().clone().>strip()
+                        line = lines.next()?.clone().>strip()
                         
                         lineCount = lineCount + 1
                         

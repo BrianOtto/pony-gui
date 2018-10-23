@@ -1,5 +1,7 @@
 use "lib:sdl/SDL2" if windows
 
+use win32 = "../win32"
+
 // Flags - Button
 
 primitive BUTTONLEFT
@@ -186,6 +188,110 @@ primitive KEYMODSHIFT
 primitive MASKSCANCODE
     fun apply(): I32 => 0x40000000
 
+// Flags - Packed Layout
+
+primitive PACKEDLAYOUT332
+    fun apply(): U32 => 1
+
+primitive PACKEDLAYOUT565
+    fun apply(): U32 => 5
+
+primitive PACKEDLAYOUT1555
+    fun apply(): U32 => 3
+
+primitive PACKEDLAYOUT4444
+    fun apply(): U32 => 2
+
+primitive PACKEDLAYOUT5551
+    fun apply(): U32 => 4
+
+primitive PACKEDLAYOUT8888
+    fun apply(): U32 => 6
+
+primitive PACKEDLAYOUT1010102
+    fun apply(): U32 => 8
+
+primitive PACKEDLAYOUT2101010
+    fun apply(): U32 => 7
+
+primitive PACKEDLAYOUTNONE
+    fun apply(): U32 => 0
+
+// Flags - Packed Order
+
+primitive PACKEDORDERABGR
+    fun apply(): U32 => 7
+
+primitive PACKEDORDERARGB
+    fun apply(): U32 => 3
+
+primitive PACKEDORDERBGRA
+    fun apply(): U32 => 8
+
+primitive PACKEDORDERBGRX
+    fun apply(): U32 => 6
+
+primitive PACKEDORDERNONE
+    fun apply(): U32 => 0
+
+primitive PACKEDORDERRGBA
+    fun apply(): U32 => 4
+
+primitive PACKEDORDERRGBX
+    fun apply(): U32 => 2
+
+primitive PACKEDORDERXBGR
+    fun apply(): U32 => 5
+
+primitive PACKEDORDERXRGB
+    fun apply(): U32 => 1
+
+// Flags - Pixel Format
+
+primitive PIXELFORMATBGR565
+    fun apply(): U32 =>
+        DefinePixelFormat(PIXELTYPEPACKED16(), PACKEDORDERXBGR(), PACKEDLAYOUT565(), 16, 2)
+
+// TODO: Add remaining pixel formats
+
+// Flags - Pixel Type
+
+primitive PIXELTYPEARRAYF16
+    fun apply(): U32 => 10
+
+primitive PIXELTYPEARRAYF32
+    fun apply(): U32 => 11
+
+primitive PIXELTYPEARRAYU8
+    fun apply(): U32 => 7
+
+primitive PIXELTYPEARRAYU16
+    fun apply(): U32 => 8
+
+primitive PIXELTYPEARRAYU32
+    fun apply(): U32 => 9
+
+primitive PIXELTYPEINDEX1
+    fun apply(): U32 => 1
+
+primitive PIXELTYPEINDEX4
+    fun apply(): U32 => 2
+
+primitive PIXELTYPEINDEX8
+    fun apply(): U32 => 3
+
+primitive PIXELTYPEPACKED8
+    fun apply(): U32 => 4
+
+primitive PIXELTYPEPACKED16
+    fun apply(): U32 => 5
+
+primitive PIXELTYPEPACKED32
+    fun apply(): U32 => 6
+
+primitive PIXELTYPEUNKNOWN
+    fun apply(): U32 => 0
+
 // Flags - Renderer
 
 primitive RENDERERACCELERATED
@@ -207,6 +313,17 @@ primitive STATEPRESSED
 
 primitive STATERELEASED
     fun apply(): U8 => 0
+
+// Flags - Texture Access
+
+primitive TEXTUREACCESSSTATIC
+    fun apply(): I32 => 0
+
+primitive TEXTUREACCESSSTREAMING
+    fun apply(): I32 => 1
+
+primitive TEXTUREACCESSTARGET
+    fun apply(): I32 => 2
 
 // Flags - Window
 
@@ -408,6 +525,13 @@ struct TextInputEvent
     
     new create() => None
 
+struct Version
+    var major: U8 = 0
+    var minor: U8 = 0
+    var patch: U8 = 0
+    
+    new create() => None
+
 struct WindowEvent
     var eventType: U32 = 0
     var timestamp: U32 = 0
@@ -436,6 +560,10 @@ primitive CreateSystemCursor
     fun apply(cursor: U8): Cursor =>
         @SDL_CreateSystemCursor[Cursor](cursor)
 
+primitive CreateTexture
+    fun apply(renderer: Pointer[Renderer], format: U32, access: I32, w: I32, h: I32): Pointer[Texture] =>
+        @SDL_CreateTexture[Pointer[Texture]](renderer, format, access, w, h)
+
 primitive CreateTextureFromSurface
     fun apply(renderer: Pointer[Renderer], surface: Pointer[Surface]): Pointer[Texture] =>
         @SDL_CreateTextureFromSurface[Pointer[Texture]](renderer, surface)
@@ -443,6 +571,10 @@ primitive CreateTextureFromSurface
 primitive CreateWindow
     fun apply(title: String, x: I32, y: I32, w: I32, h: I32, flags: U32): Pointer[Window] =>
         @SDL_CreateWindow[Pointer[Window]](title.cstring(), x, y, w, h, flags)
+
+primitive DefinePixelFormat
+    fun apply(pType: U32, order: U32, layout: U32, bits: U32, bytes: U32): U32 =>
+        ((1 << 28) or ((pType) << 24) or ((order) << 20) or ((layout) << 16) or ((bits) << 8) or ((bytes) << 0))
 
 primitive Delay
     fun apply(ms: U32): None =>
@@ -467,6 +599,10 @@ primitive GetDisplayDPI
 primitive GetError
     fun apply(): Pointer[U8] =>
         @SDL_GetError[Pointer[U8]]()
+
+primitive GetVersion
+    fun apply(ver: MaybePointer[Version]): None =>
+        @SDL_GetVersion[None](ver)
 
 primitive Init
     fun apply(flags: U32): U32 =>
@@ -513,6 +649,27 @@ struct DPI
     var v: F32 = 0
     
     new create() => None
+
+struct SysWMinfoWindows
+    // the Version struct does not work here
+    // and so we use a tuple instead
+    var version: (
+        U8, // major
+        U8, // minor
+        U8  // patch
+    ) = (2, 0, 8)
+    var subsystem: I32 = 0
+    var win: (
+        win32.HWND,     // window
+        win32.HDC,      // hdc
+        win32.HINSTANCE // hinstance
+    ) = (win32.HWND, win32.HDC, win32.HINSTANCE)
+    
+    new create() => None
+
+primitive GetWindowWMInfoWindows
+    fun apply(window: Pointer[Window], info: MaybePointer[SysWMinfoWindows]): Bool =>
+        @SDL_GetWindowWMInfo[Bool](window, info)
 
 primitive PeekEvent
     fun apply(event: MaybePointer[CommonEvent]): I32 =>

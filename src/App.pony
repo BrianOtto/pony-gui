@@ -7,6 +7,7 @@ use "api"
 use sdl = "sdl"
 use img = "sdl-image"
 use ttf = "sdl-ttf"
+use vlc = "vlc"
 
 class App
     var out: Env
@@ -24,6 +25,8 @@ class App
     var initSDL: U32 = 0
     var initIMG: I32 = 0
     var initTTF: U32 = 0
+    
+    var infoSDLWindows: sdl.SysWMinfoWindows = sdl.SysWMinfoWindows
     
     var window: Pointer[sdl.Window] = Pointer[sdl.Window]
     var windowFlags: Array[String] = Array[String]
@@ -374,6 +377,10 @@ class App
         	logAndExit("create window error")?
         end
         
+        ifdef windows then
+            sdl.GetWindowWMInfoWindows(window, MaybePointer[sdl.SysWMinfoWindows](infoSDLWindows))
+        end
+        
         // create our renderer
         
         let rFlags = sdl.RENDERERACCELERATED() or sdl.RENDERERPRESENTVSYNC()
@@ -611,6 +618,20 @@ class App
         end
     
     fun ref logAndExit(msg: String = "", isSDL: Bool = true) ? =>
+        /* TODO: stop and release all VLC elements
+        if started == 0 then
+            vlc.MediaPlayerStop(vlcMediaPlayer)
+        end
+        
+        if not vlcMediaPlayer.is_null() then
+            vlc.MediaPlayerRelease(vlcMediaPlayer)
+        end
+        
+        if not vlcInstance.is_null() then
+            vlc.Release(vlcInstance)
+        end
+        */
+        
         if initTTF == 0 then
             ttf.Quit()
         end
@@ -639,6 +660,6 @@ class App
             out.out.print(msg)
         end
         
-        out.exitcode(1)
+        out.exitcode(1)
         
         error

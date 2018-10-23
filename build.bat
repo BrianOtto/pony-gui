@@ -7,7 +7,7 @@ REM The location of the output directory
 SET "OUT=bin"
 
 REM The name of the gui application to compile
-SET "APP=calculator"
+SET "APP=videoplayer"
 
 REM The name of the binary
 REM You must use no spaces or the Pony linker will fail
@@ -61,7 +61,11 @@ REM Copy the DLLs to the output directory
 XCOPY /Y "%SRC%\sdl\*.dll" "%OUT%" 1>NUL
 XCOPY /Y "%SRC%\sdl-gfx\*.dll" "%OUT%" 1>NUL
 XCOPY /Y "%SRC%\sdl-ttf\*.dll" "%OUT%" 1>NUL
-XCOPY /Y "%SRC%\vpx\*.dll" "%OUT%" 1>NUL
+XCOPY /Y "%SRC%\vlc\*.dll" "%OUT%" 1>NUL
+
+REM Copy the VLC plugins to the output directory
+REM TODO: This should be optional / configurable
+XCOPY /Y /I /E "%SRC%\vlc\plugins" "%OUT%\plugins" 1>NUL
 
 REM This must be copied after TTF so that we get the newer zlib1.dll
 XCOPY /Y "%SRC%\sdl-image\*.dll" "%OUT%" 1>NUL

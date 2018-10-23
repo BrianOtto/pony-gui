@@ -1,0 +1,6 @@
+app height "360" width "640" title "Video Player" flags "resizeable"
+
+row height "1/1"
+    load media "video" id "video"
+
+style import "styles.gui"

@@ -4,6 +4,7 @@ use sdl = "sdl"
 use gfx = "sdl-gfx"
 use img = "sdl-image"
 use ttf = "sdl-ttf"
+use vlc = "vlc"
 
 class Render
     var app: App
@@ -125,6 +126,8 @@ class Render
             match ge.properties("media")?
             | "image" =>
                 re = _renderImage(ge, w, h, wTotal, hTotal)?
+            | "video" =>
+                re = _renderVideo(ge, w, h, wTotal, hTotal)?
             end
         | "text" =>
             re = _renderText(ge, w, h, wTotal, hTotal)?
@@ -165,6 +168,8 @@ class Render
                 match ge.properties("media")?
                 | "image" =>
                     reForStyle = _renderImage(geNew, w, h, wTotal, hTotal)?
+                | "video" =>
+                    reForStyle = _renderVideo(geNew, w, h, wTotal, hTotal)?
                 end
             | "text" =>
                 reForStyle = _renderText(geNew, w, h, wTotal, hTotal)?
@@ -485,7 +490,82 @@ class Render
         re.rect = _getRect(texture, ge, w, h, wTotal, hTotal)
         
         re
+    
+    fun ref _renderVideo(ge: GuiElement, w: I32, h: I32, wTotal: I32, hTotal: I32): RenderElement ? =>
+        var width: I32 = 0
+        let widthProp = ge.properties.get_or_else("width", "1/1")
         
+        if widthProp.contains("/") then
+            let widthParts = widthProp.split_by("/")
+            let widthAsPct = try widthParts(0)?.f32() / widthParts(1)?.f32() else 1 end
+            width = (w.f32() * widthAsPct).i32()
+        else
+            width = try ge.properties("width")?.i32()? else w end
+        end
+        
+        width = if width > w then w else width end
+        
+        var height: I32 = 0
+        let heightProp = ge.properties.get_or_else("height", "1/1")
+        
+        if heightProp.contains("/") then
+            let heightParts = heightProp.split_by("/")
+            let heightAsPct = try heightParts(0)?.f32() / heightParts(1)?.f32() else 1 end
+            height = (h.f32() * heightAsPct).i32()
+        else
+            height = try ge.properties("height")?.i32()? else h end
+        end
+        
+        height = if height > h then h else height end
+        
+        let texture = sdl.CreateTexture(app.renderer, sdl.PIXELFORMATBGR565(), 
+            sdl.TEXTUREACCESSSTREAMING(), width, height)
+        
+        if texture.is_null() then
+            app.logAndExit("load video texture error")?
+        end
+        
+        let re = RenderElement
+        
+        re.id = ge.id
+        re.texture = texture
+        re.rect = _getRect(texture, ge, w, h, wTotal, hTotal)
+        
+        let vlcInstance = vlc.New()
+        
+        if vlcInstance.is_null() then
+            app.logAndExit("load video error")?
+        end
+        
+        let vlcMedia = vlc.MediaNewPath(vlcInstance, ge.properties("src")?)
+        
+        if vlcMedia.is_null() then
+            app.logAndExit("load video media error")?
+        end
+        
+        let vlcMediaPlayer = vlc.MediaPlayerNewFromMedia(vlcMedia)
+        
+        if vlcMediaPlayer.is_null() then
+            app.logAndExit("load video media player error")?
+        end
+        
+        if not vlcMedia.is_null() then
+            vlc.MediaRelease(vlcMedia)
+        end
+        
+        ifdef windows then
+            (let hwnd, let hdc, let hinstance) = app.infoSDLWindows.win
+            vlc.MediaPlayerSetHwnd(vlcMediaPlayer, hwnd)
+        end
+        
+        let vlcMediaPlayerStarted = vlc.MediaPlayerPlay(vlcMediaPlayer)
+        
+        if vlcMediaPlayerStarted != 0 then
+            app.logAndExit("play video media player error")?
+        end
+        
+        re
+    
     fun ref _getRect(texture: Pointer[sdl.Texture], guiElement: GuiElement, 
                      w: I32, h: I32, wTotal: I32, hTotal: I32): sdl.Rect =>
         

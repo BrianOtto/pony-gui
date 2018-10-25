@@ -1,2 +1,28 @@
 style id "video"
     src "Tears of Steel - 1080p.webm"
+    x "center"
+    y "center"
+
+style id "video-background"
+    fill "000000"
+
+style group "button"
+    width "8/10"
+    height "5/10"
+    x "center"
+    y "center"
+
+style group "button-text"
+    cursor "hand"
+    x "center"
+    y "center"
+
+style group "button" state "button-over"
+    fill "C0C0C0"
+    cursor "hand"
+
+style group "button" state "button-down"
+    fill "909090"
+
+style group "button" state "button-click"
+    fill "C0C0C0"

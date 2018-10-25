@@ -8,6 +8,7 @@ use sdl = "sdl"
 use img = "sdl-image"
 use ttf = "sdl-ttf"
 use vlc = "vlc"
+use win = "win"
 
 class App
     var out: Env
@@ -34,6 +35,8 @@ class App
     var windowColor: sdl.Color = sdl.Color
     var windowW: I32 = 1280
     var windowH: I32 = 720
+    var windowX: I32 = 100
+    var windowY: I32 = 100
     
     var renderer: Pointer[sdl.Renderer] = Pointer[sdl.Renderer]
     
@@ -231,7 +234,22 @@ class App
                     var event: sdl.WindowEvent ref = sdl.WindowEvent
                     more = sdl.PollWindowEvent(MaybePointer[sdl.WindowEvent](event))
                     
-                    if event.event == sdl.WINDOWEVENTRESIZED() then
+                    match event.event
+                    | sdl.WINDOWEVENTCLOSE() =>
+                        more = 0
+                        poll = false
+                        
+                        logAndExit()?
+                    | sdl.WINDOWEVENTMOVED() =>
+                        for element in elements.values() do
+                            if not element.video.is_null() then
+                                Render(this).recalc(element.id, element)?
+                                
+                                sdl.RaiseWindow(element.video)
+                                sdl.ShowWindow(element.video)
+                            end
+                        end
+                    | sdl.WINDOWEVENTRESIZED() =>
                         windowW = event.data1
                         windowH = event.data2
                         
@@ -240,6 +258,15 @@ class App
                         if events.contains("resize") then
                             for ge in events("resize")?.values() do
                                 _runEventCommands(ge, state)?
+                            end
+                        end
+                        
+                        for element in elements.values() do
+                            if not element.video.is_null() then
+                                Render(this).recalc(element.id, element)?
+                                
+                                sdl.RaiseWindow(element.video)
+                                sdl.ShowWindow(element.video)
                             end
                         end
                     end
@@ -261,12 +288,18 @@ class App
             sdl.RenderClear(renderer)
             
             for element in elements.values() do
-                if not element.texture.is_null() then
-                    sdl.RenderCopy(renderer, element.texture, Pointer[sdl.Rect], MaybePointer[sdl.Rect](element.rect))
-                end
-                
-                for callback in element.callbacks.values() do
-                    callback()
+                if not element.videoRenderer.is_null() then
+                    sdl.SetRenderDrawColor(element.videoRenderer, 0, 0, 0, 0)
+                    sdl.RenderClear(element.videoRenderer)
+                    sdl.RenderPresent(element.videoRenderer)
+                else
+                    if not element.texture.is_null() then
+                        sdl.RenderCopy(renderer, element.texture, Pointer[sdl.Rect], MaybePointer[sdl.Rect](element.rect))
+                    end
+                    
+                    for callback in element.callbacks.values() do
+                        callback()
+                    end
                 end
             end
             
@@ -371,7 +404,7 @@ class App
             end
         end
         
-        window = sdl.CreateWindow(windowTitle, 100, 100, windowW, windowH, wFlags)
+        window = sdl.CreateWindow(windowTitle, windowX, windowY, windowW, windowH, wFlags)
         
         if window.is_null() then
         	logAndExit("create window error")?
@@ -380,6 +413,9 @@ class App
         ifdef windows then
             sdl.GetWindowWMInfoWindows(window, MaybePointer[sdl.SysWMinfoWindows](infoSDLWindows))
         end
+        
+        sdl.EventState(sdl.EVENTSYSWMEVENT(), 1)
+        sdl.SetEventFilter[App](this~_filterForSysWMEventWindows[App]()?, sdl.UserData[App](this))
         
         // create our renderer
         
@@ -617,20 +653,41 @@ class App
             end
         end
     
+    fun @_filterForSysWMEventWindows[A: Any ref](userdata: sdl.UserData[A], event: sdl.SysWMEventWindows): U32 ? =>
+        if event.eventType == sdl.EVENTSYSWMEVENT() then
+            (let hwnd, let msg, let wParam, let lParam) = event.msg.windows
+            
+            if msg == win.WMENTERSIZEMOVE() then
+                let app = userdata.instance as App
+                
+                for element in app.elements.values() do
+                    if not element.video.is_null() then
+                        sdl.HideWindow(element.video)
+                    end
+                end
+            end
+        end
+        
+        1
+    
     fun ref logAndExit(msg: String = "", isSDL: Bool = true) ? =>
-        /* TODO: stop and release all VLC elements
-        if started == 0 then
-            vlc.MediaPlayerStop(vlcMediaPlayer)
+        for element in elements.values() do
+            if not element.video.is_null() then
+                if not element.videoPlayer.is_null() then
+                    vlc.MediaPlayerRelease(element.videoPlayer)
+                end
+                
+                if not element.videoInstance.is_null() then
+                    vlc.Release(element.videoInstance)
+                end
+                
+                if not element.videoRenderer.is_null() then
+                    sdl.DestroyRenderer(element.videoRenderer)
+                end
+                
+                sdl.DestroyWindow(element.video)
+            end
         end
-        
-        if not vlcMediaPlayer.is_null() then
-            vlc.MediaPlayerRelease(vlcMediaPlayer)
-        end
-        
-        if not vlcInstance.is_null() then
-            vlc.Release(vlcInstance)
-        end
-        */
         
         if initTTF == 0 then
             ttf.Quit()

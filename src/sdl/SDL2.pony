@@ -1,6 +1,6 @@
 use "lib:sdl/SDL2" if windows
 
-use win32 = "../win32"
+use win = "../win"
 
 // Flags - Button
 
@@ -85,6 +85,9 @@ primitive EVENTMOUSEWHEEL
 
 primitive EVENTQUIT
     fun apply(): U32 => 0x100
+
+primitive EVENTSYSWMEVENT
+    fun apply(): U32 => 0x201
 
 primitive EVENTWINDOWEVENT
     fun apply(): U32 => 0x200
@@ -525,6 +528,12 @@ struct TextInputEvent
     
     new create() => None
 
+struct UserData[A: Any ref] 
+    var instance: A
+    
+    new create(myInstance: A) =>
+        instance = myInstance
+
 struct Version
     var major: U8 = 0
     var minor: U8 = 0
@@ -551,6 +560,10 @@ primitive Texture
 primitive Window
 
 // Functions
+
+primitive Button
+    fun apply(state: U32): U32 =>
+        (1 << ((state) - 1))
 
 primitive CreateRenderer
     fun apply(window: Pointer[Window], index: I32, flags: U32): Pointer[Renderer] =>
@@ -588,6 +601,10 @@ primitive DestroyWindow
     fun apply(window: Pointer[Window]): None =>
         @SDL_DestroyWindow[None](window)
 
+primitive EventState
+    fun apply(eventType: U32, state: U32): U8 =>
+        @SDL_EventState[U8](eventType, state)
+
 primitive FreeSurface
     fun apply(surface: Pointer[Surface]): None =>
         @SDL_FreeSurface[None](surface)
@@ -600,9 +617,29 @@ primitive GetError
     fun apply(): Pointer[U8] =>
         @SDL_GetError[Pointer[U8]]()
 
+primitive GetGlobalMouseState
+    fun apply(pos: Position): U32 =>
+        @SDL_GetGlobalMouseState[U32](addressof pos.x, addressof pos.y)
+
+primitive GetMouseFocus
+    fun apply(): Pointer[Window] =>
+        @SDL_GetMouseFocus[Pointer[Window]]()
+
 primitive GetVersion
     fun apply(ver: MaybePointer[Version]): None =>
         @SDL_GetVersion[None](ver)
+
+primitive GetWindowID
+    fun apply(window: Pointer[Window]): U32 =>
+        @SDL_GetWindowID[U32](window)
+
+primitive GetWindowPosition
+    fun apply(window: Pointer[Window], pos: Position): None =>
+        @SDL_GetWindowPosition[None](window, addressof pos.x, addressof pos.y)
+
+primitive HideWindow
+    fun apply(window: Pointer[Window]): None =>
+        @SDL_HideWindow[None](window)
 
 primitive Init
     fun apply(flags: U32): U32 =>
@@ -615,6 +652,10 @@ primitive PumpEvents
 primitive QueryTexture
     fun apply(texture: Pointer[Texture], format: Pointer[U32], access: Pointer[I32], rect: Rect): U32 =>
         @SDL_QueryTexture[U32](texture, Pointer[U32], Pointer[I32], addressof rect.w, addressof rect.h)
+
+primitive RaiseWindow
+    fun apply(window: Pointer[Window]): None =>
+        @SDL_RaiseWindow[None](window)
 
 primitive RenderClear
     fun apply(renderer: Pointer[Renderer]): U32 =>
@@ -633,9 +674,29 @@ primitive SetCursor
     fun apply(cursor: Cursor): None =>
         @SDL_SetCursor[None](cursor)
 
+primitive SetEventFilter[A: Any ref]
+    fun apply(filter: @{(UserData[A], SysWMEventWindows): U32 ?}, userdata: UserData[A]): None =>
+        @SDL_SetEventFilter[None](filter, userdata)
+
+primitive SetHint
+    fun apply(name: String, value: String): Bool =>
+        @SDL_SetHint[Bool](name.cstring(), value.cstring())
+
 primitive SetRenderDrawColor
     fun apply(renderer: Pointer[Renderer], r: U8, g: U8, b: U8, a: U8): U32 =>
         @SDL_SetRenderDrawColor[U32](renderer, r, g, b, a)
+
+primitive SetWindowPosition
+    fun apply(window: Pointer[Window], x: I32, y: I32): None =>
+        @SDL_SetWindowPosition[None](window, x, y)
+
+primitive SetWindowSize
+    fun apply(window: Pointer[Window], w: I32, h: I32): None =>
+        @SDL_SetWindowSize[None](window, w, h)
+
+primitive ShowWindow
+    fun apply(window: Pointer[Window]): None =>
+        @SDL_ShowWindow[None](window)
 
 primitive Quit
     fun apply(): None =>
@@ -650,6 +711,19 @@ struct DPI
     
     new create() => None
 
+struct Position
+    var x: I32 = 0
+    var y: I32 = 0
+    
+    new create() => None
+
+struct SysWMEventWindows
+    var eventType: U32 = 0
+    var timestamp: U32 = 0
+    var msg: SysWMmsgWindows = SysWMmsgWindows
+    
+    new create() => None
+
 struct SysWMinfoWindows
     // the Version struct does not work here
     // and so we use a tuple instead
@@ -659,11 +733,29 @@ struct SysWMinfoWindows
         U8  // patch
     ) = (2, 0, 8)
     var subsystem: I32 = 0
-    var win: (
-        win32.HWND,     // window
-        win32.HDC,      // hdc
-        win32.HINSTANCE // hinstance
-    ) = (win32.HWND, win32.HDC, win32.HINSTANCE)
+    var windows: (
+        win.HWND,     // window
+        win.HDC,      // hdc
+        win.HINSTANCE // hinstance
+    ) = (win.HWND, win.HDC, win.HINSTANCE)
+    
+    new create() => None
+
+struct SysWMmsgWindows
+    // the Version struct does not work here
+    // and so we use a tuple instead
+    var version: (
+        U8, // major
+        U8, // minor
+        U8  // patch
+    ) = (2, 0, 8)
+    var subsystem: I32 = 0
+    var windows: (
+        win.HWND,   // hwnd
+        win.UINT,   // msg
+        win.WPARAM, // wParam
+        win.LPARAM  // lParam
+    ) = (win.HWND, 0, 0, 0)
     
     new create() => None
 
@@ -693,4 +785,8 @@ primitive PollMouseMotionEvent
 
 primitive PollWindowEvent
     fun apply(event: MaybePointer[WindowEvent]): I32 =>
+        @SDL_PollEvent[I32](event)
+
+primitive PollSysWMEventWindows
+    fun apply(event: MaybePointer[SysWMmsgWindows]): I32 =>
         @SDL_PollEvent[I32](event)

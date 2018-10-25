@@ -1,6 +1,24 @@
-app height "360" width "640" title "Video Player" flags "resizeable"
+app height "360" width "480" title "Video Player" flags "resizeable"
 
-row height "1/1"
+row height "7/8"
     load media "video" id "video"
+    draw shape "rectangle" id "video-background"
+
+row height "1/8"
+    col width "1/4"
+        draw shape "rectangle" group "button" key "LEFT"
+        text value "«" group "button-text"
+    
+    col width "1/4"
+        draw shape "rectangle" group "button"
+        text value "Stop" group "button-text"
+    
+    col width "1/4"
+        draw shape "rectangle" group "button"
+        text value "Play" group "button-text"
+    
+    col width "1/4"
+        draw shape "rectangle" group "button" key "RIGHT"
+        text value "»" group "button-text"
 
 style import "styles.gui"

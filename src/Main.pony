@@ -1,11 +1,11 @@
 use "collections"
 
-use win32 = "win32"
+use win = "win"
 
 actor Main
     new create(env: Env) =>
         ifdef windows then
-            win32.SetProcessDpiAwareness(2)
+            win.SetProcessDpiAwareness(2)
         end
         
         try

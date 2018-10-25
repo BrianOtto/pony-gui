@@ -77,6 +77,20 @@ class Render
                                     
                                     re.callbacks = reNew.callbacks
                                     re.states = reNew.states
+                                elseif not re.video.is_null() then
+                                    (let width, let height) = _getWH(ge, w, h)
+                                    
+                                    sdl.SetWindowSize(re.video, width, height)
+                                    
+                                    (var x, var y) = _getXY(ge, w, wTotal, width, h, hTotal, height)
+                                    
+                                    var winPos = sdl.Position
+                                    sdl.GetWindowPosition(app.window, winPos)
+                                    
+                                    x = x + winPos.x
+                                    y = y + winPos.y
+                                    
+                                    sdl.SetWindowPosition(re.video, x, y)
                                 else
                                     re.rect = _getRect(re.texture, re.ge, w, h, wTotal, hTotal)
                                     
@@ -85,21 +99,35 @@ class Render
                                     end
                                 end
                             elseif re.id == id then
-                                // get the properties the state was originally rendered with
-                                // and make them permanent by merging them with the GUI element
-                                for geProp in reRender.geState.properties.pairs() do
-                                    ge.properties.update(geProp._1, geProp._2)
+                                if not re.video.is_null() then
+                                    (let width, let height) = _getWH(ge, w, h)
+                                    
+                                    (var x, var y) = _getXY(ge, w, wTotal, width, h, hTotal, height)
+                                    
+                                    var winPos = sdl.Position
+                                    sdl.GetWindowPosition(app.window, winPos)
+                                    
+                                    x = x + winPos.x
+                                    y = y + winPos.y
+                                    
+                                    sdl.SetWindowPosition(re.video, x, y)
+                                else
+                                    // get the properties the state was originally rendered with
+                                    // and make them permanent by merging them with the GUI element
+                                    for geProp in reRender.geState.properties.pairs() do
+                                        ge.properties.update(geProp._1, geProp._2)
+                                    end
+                                    
+                                    // get the previous state id that was being displayed
+                                    var rePrevId = re.geState.id
+                                    
+                                    // re-render all the GUI element states with these new properties
+                                    let reNew = render(ge, w, h, wTotal, hTotal)?
+                                    reNew.clone(re, true)
+                                    
+                                    // go back to displaying the previous state
+                                    re.states(rePrevId)?.clone(re)
                                 end
-                                
-                                // get the previous state id that was being displayed
-                                var rePrevId = re.geState.id
-                                
-                                // re-render all the GUI element states with these new properties
-                                let reNew = render(ge, w, h, wTotal, hTotal)?
-                                reNew.clone(re, true)
-                                
-                                // go back to displaying the previous state
-                                re.states(rePrevId)?.clone(re)
                             end
                         end
                     end
@@ -329,66 +357,12 @@ class Render
         re
     
     fun ref _renderRectangle(ge: GuiElement, w: I32, h: I32, wTotal: I32, hTotal: I32): RenderElement =>
-        var x1: I32 = 0
-        var x2: I32 = 0
-        var y1: I32 = 0
-        var y2: I32 = 0
+        (let width, let height) = _getWH(ge, w, h)
         
-        var width: I32 = 0
-        let widthProp = ge.properties.get_or_else("width", "1/1")
+        (let x1, let y1) = _getXY(ge, w, wTotal, width, h, hTotal, height)
         
-        if widthProp.contains("/") then
-            let widthParts = widthProp.split_by("/")
-            let widthAsPct = try widthParts(0)?.f32() / widthParts(1)?.f32() else 1 end
-            width = (w.f32() * widthAsPct).i32()
-        else
-            width = try ge.properties("width")?.i32()? else w end
-        end
-        
-        width = if width > w then w else width end
-        
-        var height: I32 = 0
-        let heightProp = ge.properties.get_or_else("height", "1/1")
-        
-        if heightProp.contains("/") then
-            let heightParts = heightProp.split_by("/")
-            let heightAsPct = try heightParts(0)?.f32() / heightParts(1)?.f32() else 1 end
-            height = (h.f32() * heightAsPct).i32()
-        else
-            height = try ge.properties("height")?.i32()? else h end
-        end
-        
-        height = if height > h then h else height end
-        
-        let guiElementX = ge.properties.get_or_else("x", "0")
-        
-        match guiElementX
-        | "left" =>
-            x1 = wTotal
-        | "right" =>
-            x1 = w - width
-        | "center" =>
-            x1 = wTotal + ((w - width) / 2)
-        else
-            x1 = wTotal + try guiElementX.i32()? else 0 end
-        end
-        
-        x2 = x1 + width
-        
-        let guiElementY = ge.properties.get_or_else("y", "0")
-        
-        match guiElementY
-        | "top" =>
-            y1 = hTotal
-        | "bottom" =>
-            y1 = h - height
-        | "center" =>
-            y1 = hTotal + ((h - height) / 2)
-        else
-            y1 = hTotal + try guiElementY.i32()? else 0 end
-        end
-        
-        y2 = y1 + height
+        let x2 = x1 + width
+        let y2 = y1 + height
         
         let border: Bool = try
             if ge.properties("border")? == "1" then true else false end
@@ -492,6 +466,172 @@ class Render
         re
     
     fun ref _renderVideo(ge: GuiElement, w: I32, h: I32, wTotal: I32, hTotal: I32): RenderElement ? =>
+        (let width, let height) = _getWH(ge, w, h)
+        
+        (var x, var y) = _getXY(ge, w, wTotal, width, h, hTotal, height)
+        
+        var winPos = sdl.Position
+        sdl.GetWindowPosition(app.window, winPos)
+        
+        x = x + winPos.x
+        y = y + winPos.y
+        
+        let window = sdl.CreateWindow("", x, y, width, height, sdl.WINDOWBORDERLESS())
+        
+        if window.is_null() then
+        	app.logAndExit("render video window error")?
+        end
+        
+        var infoSDLWindows: sdl.SysWMinfoWindows = sdl.SysWMinfoWindows
+        
+        ifdef windows then
+            sdl.GetWindowWMInfoWindows(window, MaybePointer[sdl.SysWMinfoWindows](infoSDLWindows))
+        end
+        
+        // create our renderer
+        
+        let rFlags = sdl.RENDERERACCELERATED() or sdl.RENDERERPRESENTVSYNC()
+        let renderer = sdl.CreateRenderer(window, -1, rFlags)
+        
+        if renderer.is_null() then
+        	app.logAndExit("render video renderer error")?
+        end
+        
+        let vlcInstance = vlc.New()
+        
+        if vlcInstance.is_null() then
+            app.logAndExit("load video error")?
+        end
+        
+        let vlcMedia = vlc.MediaNewPath(vlcInstance, ge.properties("src")?)
+        
+        if vlcMedia.is_null() then
+            app.logAndExit("load video media error")?
+        end
+        
+        let vlcMediaPlayer = vlc.MediaPlayerNewFromMedia(vlcMedia)
+        
+        if vlcMediaPlayer.is_null() then
+            app.logAndExit("load video media player error")?
+        end
+        
+        if not vlcMedia.is_null() then
+            vlc.MediaRelease(vlcMedia)
+        end
+        
+        ifdef windows then
+            (let hwnd, let hdc, let hinstance) = infoSDLWindows.windows
+            vlc.MediaPlayerSetHwnd(vlcMediaPlayer, hwnd)
+        end
+        
+        let vlcMediaPlayerStarted = vlc.MediaPlayerPlay(vlcMediaPlayer)
+        
+        if vlcMediaPlayerStarted != 0 then
+            app.logAndExit("play video media player error")?
+        end
+        
+        sdl.SetHint("SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH", "1")
+        
+        let re = RenderElement
+        
+        re.id = ge.id
+        re.video = window
+        re.videoRenderer = renderer
+        re.videoInstance = vlcInstance
+        re.videoPlayer = vlcMediaPlayer
+        
+        re
+    
+    fun ref _getRect(texture: Pointer[sdl.Texture], ge: GuiElement, 
+                     w: I32, h: I32, wTotal: I32, hTotal: I32): sdl.Rect =>
+        
+        let rect = sdl.Rect
+        
+        sdl.QueryTexture(texture, Pointer[U32], Pointer[I32], rect)
+        
+        let guiElementX = ge.properties.get_or_else("x", "0")
+        rect.w = if rect.w > w then w else rect.w end
+        
+        match guiElementX
+        | "left" =>
+            rect.x = wTotal
+        | "right" =>
+            rect.x = w - rect.w
+        | "center" =>
+            rect.x = wTotal + ((w - rect.w) / 2)
+        else
+            rect.x = wTotal + try guiElementX.i32()? else 0 end
+        end
+        
+        let guiElementPR = ge.properties.get_or_else("padding-right", "0")
+        var pr: I32 = 0
+        
+        if guiElementPR.contains("/") then
+            let prParts = guiElementPR.split_by("/")
+            let prAsPct = try prParts(0)?.f32() / prParts(1)?.f32() else 0 end
+            pr = (app.windowW.f32() * prAsPct).i32()
+        else
+            pr = try guiElementPR.i32()? else 0 end
+        end
+        
+        rect.x = rect.x - pr
+        
+        let guiElementPL = ge.properties.get_or_else("padding-left", "0")
+        var pl: I32 = 0
+        
+        if guiElementPL.contains("/") then
+            let plParts = guiElementPL.split_by("/")
+            let plAsPct = try plParts(0)?.f32() / plParts(1)?.f32() else 0 end
+            pl = (app.windowW.f32() * plAsPct).i32()
+        else
+            pl = try guiElementPL.i32()? else 0 end
+        end
+        
+        rect.x = rect.x + pl
+        
+        let guiElementY = ge.properties.get_or_else("y", "0")
+        rect.h = if rect.h > h then h else rect.h end
+        
+        match guiElementY
+        | "top" =>
+            rect.y = hTotal
+        | "bottom" =>
+            rect.y = h - rect.h
+        | "center" =>
+            rect.y = hTotal + ((h - rect.h) / 2)
+        else
+            rect.y = hTotal + try guiElementY.i32()? else 0 end
+        end
+        
+        let guiElementPT = ge.properties.get_or_else("padding-top", "0")
+        var pt: I32 = 0
+        
+        if guiElementPT.contains("/") then
+            let ptParts = guiElementPT.split_by("/")
+            let ptAsPct = try ptParts(0)?.f32() / ptParts(1)?.f32() else 0 end
+            pt = (app.windowH.f32() * ptAsPct).i32()
+        else
+            pt = try guiElementPT.i32()? else 0 end
+        end
+        
+        rect.y = rect.y + pt
+        
+        let guiElementPB = ge.properties.get_or_else("padding-bottom", "0")
+        var pb: I32 = 0
+        
+        if guiElementPB.contains("/") then
+            let pbParts = guiElementPB.split_by("/")
+            let pbAsPct = try pbParts(0)?.f32() / pbParts(1)?.f32() else 0 end
+            pb = (app.windowH.f32() * pbAsPct).i32()
+        else
+            pb = try guiElementPB.i32()? else 0 end
+        end
+        
+        rect.y = rect.y - pb
+        
+        rect
+    
+    fun ref _getWH(ge: GuiElement, w: I32, h: I32): (I32, I32) =>
         var width: I32 = 0
         let widthProp = ge.properties.get_or_else("width", "1/1")
         
@@ -518,139 +658,36 @@ class Render
         
         height = if height > h then h else height end
         
-        let texture = sdl.CreateTexture(app.renderer, sdl.PIXELFORMATBGR565(), 
-            sdl.TEXTUREACCESSSTREAMING(), width, height)
-        
-        if texture.is_null() then
-            app.logAndExit("load video texture error")?
-        end
-        
-        let re = RenderElement
-        
-        re.id = ge.id
-        re.texture = texture
-        re.rect = _getRect(texture, ge, w, h, wTotal, hTotal)
-        
-        let vlcInstance = vlc.New()
-        
-        if vlcInstance.is_null() then
-            app.logAndExit("load video error")?
-        end
-        
-        let vlcMedia = vlc.MediaNewPath(vlcInstance, ge.properties("src")?)
-        
-        if vlcMedia.is_null() then
-            app.logAndExit("load video media error")?
-        end
-        
-        let vlcMediaPlayer = vlc.MediaPlayerNewFromMedia(vlcMedia)
-        
-        if vlcMediaPlayer.is_null() then
-            app.logAndExit("load video media player error")?
-        end
-        
-        if not vlcMedia.is_null() then
-            vlc.MediaRelease(vlcMedia)
-        end
-        
-        ifdef windows then
-            (let hwnd, let hdc, let hinstance) = app.infoSDLWindows.win
-            vlc.MediaPlayerSetHwnd(vlcMediaPlayer, hwnd)
-        end
-        
-        let vlcMediaPlayerStarted = vlc.MediaPlayerPlay(vlcMediaPlayer)
-        
-        if vlcMediaPlayerStarted != 0 then
-            app.logAndExit("play video media player error")?
-        end
-        
-        re
+        (width, height)
     
-    fun ref _getRect(texture: Pointer[sdl.Texture], guiElement: GuiElement, 
-                     w: I32, h: I32, wTotal: I32, hTotal: I32): sdl.Rect =>
-        
-        let rect = sdl.Rect
-        
-        sdl.QueryTexture(texture, Pointer[U32], Pointer[I32], rect)
-        
-        let guiElementX = guiElement.properties.get_or_else("x", "0")
-        rect.w = if rect.w > w then w else rect.w end
-        
+    fun ref _getXY(ge: GuiElement, w: I32, wTotal: I32, width: I32, h: I32, hTotal: I32, height: I32): (I32, I32) =>
+        var x: I32 = 0
+        var y: I32 = 0
+
+        let guiElementX = ge.properties.get_or_else("x", "0")
+
         match guiElementX
         | "left" =>
-            rect.x = wTotal
+            x = wTotal
         | "right" =>
-            rect.x = w - rect.w
+            x = w - width
         | "center" =>
-            rect.x = wTotal + ((w - rect.w) / 2)
+            x = wTotal + ((w - width) / 2)
         else
-            rect.x = wTotal + try guiElementX.i32()? else 0 end
+            x = wTotal + try guiElementX.i32()? else 0 end
         end
-        
-        let guiElementPR = guiElement.properties.get_or_else("padding-right", "0")
-        var pr: I32 = 0
-        
-        if guiElementPR.contains("/") then
-            let prParts = guiElementPR.split_by("/")
-            let prAsPct = try prParts(0)?.f32() / prParts(1)?.f32() else 0 end
-            pr = (app.windowW.f32() * prAsPct).i32()
-        else
-            pr = try guiElementPR.i32()? else 0 end
-        end
-        
-        rect.x = rect.x - pr
-        
-        let guiElementPL = guiElement.properties.get_or_else("padding-left", "0")
-        var pl: I32 = 0
-        
-        if guiElementPL.contains("/") then
-            let plParts = guiElementPL.split_by("/")
-            let plAsPct = try plParts(0)?.f32() / plParts(1)?.f32() else 0 end
-            pl = (app.windowW.f32() * plAsPct).i32()
-        else
-            pl = try guiElementPL.i32()? else 0 end
-        end
-        
-        rect.x = rect.x + pl
-        
-        let guiElementY = guiElement.properties.get_or_else("y", "0")
-        rect.h = if rect.h > h then h else rect.h end
-        
+
+        let guiElementY = ge.properties.get_or_else("y", "0")
+
         match guiElementY
         | "top" =>
-            rect.y = hTotal
+            y = hTotal
         | "bottom" =>
-            rect.y = h - rect.h
+            y = h - height
         | "center" =>
-            rect.y = hTotal + ((h - rect.h) / 2)
+            y = hTotal + ((h - height) / 2)
         else
-            rect.y = hTotal + try guiElementY.i32()? else 0 end
+            y = hTotal + try guiElementY.i32()? else 0 end
         end
         
-        let guiElementPT = guiElement.properties.get_or_else("padding-top", "0")
-        var pt: I32 = 0
-        
-        if guiElementPT.contains("/") then
-            let ptParts = guiElementPT.split_by("/")
-            let ptAsPct = try ptParts(0)?.f32() / ptParts(1)?.f32() else 0 end
-            pt = (app.windowH.f32() * ptAsPct).i32()
-        else
-            pt = try guiElementPT.i32()? else 0 end
-        end
-        
-        rect.y = rect.y + pt
-        
-        let guiElementPB = guiElement.properties.get_or_else("padding-bottom", "0")
-        var pb: I32 = 0
-        
-        if guiElementPB.contains("/") then
-            let pbParts = guiElementPB.split_by("/")
-            let pbAsPct = try pbParts(0)?.f32() / pbParts(1)?.f32() else 0 end
-            pb = (app.windowH.f32() * pbAsPct).i32()
-        else
-            pb = try guiElementPB.i32()? else 0 end
-        end
-        
-        rect.y = rect.y - pb
-        
-        rect
+        (x, y)

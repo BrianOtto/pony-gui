@@ -1,6 +1,6 @@
 use "lib:vlc/libvlc" if windows
 
-use win32 = "../win32"
+use win = "../win"
 
 // Pointers
 
@@ -35,7 +35,7 @@ primitive MediaPlayerRelease
         @libvlc_media_player_release[None](p_mi)
 
 primitive MediaPlayerSetHwnd
-    fun apply(p_mi: Pointer[MediaPlayerT], drawable: win32.HWND): None =>
+    fun apply(p_mi: Pointer[MediaPlayerT], drawable: win.HWND): None =>
         @libvlc_media_player_set_hwnd[None](p_mi, drawable)
 
 primitive MediaPlayerStop

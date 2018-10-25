@@ -2,6 +2,7 @@ use "collections"
 use "debug"
 
 use sdl = "sdl"
+use vlc = "vlc"
 
 class RenderElement is ICanRunCommands
     var guid: U32 = -1
@@ -17,6 +18,11 @@ class RenderElement is ICanRunCommands
     var rect: sdl.Rect = sdl.Rect
     var states: Map[String, RenderElement] = Map[String, RenderElement]
     var _data: Map[String, String] = Map[String, String]
+    
+    var video: Pointer[sdl.Window] = Pointer[sdl.Window]
+    var videoRenderer: Pointer[sdl.Renderer] = Pointer[sdl.Renderer]
+    var videoInstance: Pointer[vlc.InstanceT] = Pointer[vlc.InstanceT]
+    var videoPlayer: Pointer[vlc.MediaPlayerT] = Pointer[vlc.MediaPlayerT]
     
     new create() => None
     

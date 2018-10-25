@@ -476,7 +476,8 @@ class Render
         x = x + winPos.x
         y = y + winPos.y
         
-        let window = sdl.CreateWindow("", x, y, width, height, sdl.WINDOWBORDERLESS())
+        let wFlags = sdl.WINDOWBORDERLESS() or sdl.WINDOWSKIPTASKBAR()
+        let window = sdl.CreateWindow("", x, y, width, height, wFlags)
         
         if window.is_null() then
         	app.logAndExit("render video window error")?

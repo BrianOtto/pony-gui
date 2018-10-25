@@ -25,6 +25,9 @@ REM Clean up the ouput and API directories
 FOR %%i IN ("%OUT%\*") DO IF NOT "%%i" == "%OUT%\.gitignore" DEL /Q "%%i"
 FOR %%i IN ("%SRC%\api\*") DO IF NOT "%%i" == "%SRC%\api\.gitignore" DEL /Q "%%i"
 
+REM Clean up the VLC plugins
+RMDIR /S /Q "%OUT%\plugins"
+
 ECHO.
 ECHO Building Pony-GUI ...
 ECHO.

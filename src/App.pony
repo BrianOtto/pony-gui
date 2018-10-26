@@ -230,6 +230,13 @@ class App
                     end
                     
                     lastDown = -1
+                    
+                    // see sdl.WINDOWEVENTFOCUSGAINED() for why we do this here
+                    for element in elements.values() do
+                        if not element.video.is_null() then
+                            sdl.RaiseWindow(element.video)
+                        end
+                    end
                 | sdl.EVENTWINDOWEVENT() =>
                     var event: sdl.WindowEvent ref = sdl.WindowEvent
                     more = sdl.PollWindowEvent(MaybePointer[sdl.WindowEvent](event))
@@ -240,6 +247,36 @@ class App
                         poll = false
                         
                         logAndExit()?
+                    | sdl.WINDOWEVENTFOCUSGAINED() =>
+                        if event.windowID == 1 then
+                            // HACK: This simulates SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH
+                            
+                            // When the mouse is clicked on the main window, it only sets the focus
+                            // The mouse button down/up events do not get passed through
+                            // The hint is supposed to allow this, but it is not working
+                            
+                            let pos = sdl.Position
+                            sdl.GetMouseState(pos)
+                            
+                            let mbEvent: sdl.MouseButtonEvent ref = sdl.MouseButtonEvent
+                            mbEvent.x = pos.x
+                            mbEvent.y = pos.y
+                            
+                            mbEvent.eventType = sdl.EVENTMOUSEBUTTONDOWN()
+                            sdl.PushEventMouseButtonEvent(MaybePointer[sdl.MouseButtonEvent](mbEvent))
+                            
+                            mbEvent.eventType = sdl.EVENTMOUSEBUTTONUP()
+                            sdl.PushEventMouseButtonEvent(MaybePointer[sdl.MouseButtonEvent](mbEvent))
+                        end
+                    | sdl.WINDOWEVENTMINIMIZED() =>
+                        for element in elements.values() do
+                            if not element.video.is_null() then
+                                sdl.HideWindow(element.video)
+                                
+                                // TODO: set the playing flag properly and re-render the play button
+                                vlc.MediaPlayerPause(element.videoPlayer)
+                            end
+                        end
                     | sdl.WINDOWEVENTMOVED() =>
                         for element in elements.values() do
                             if not element.video.is_null() then
@@ -265,6 +302,13 @@ class App
                             if not element.video.is_null() then
                                 Render(this).recalc(element.id, element)?
                                 
+                                sdl.RaiseWindow(element.video)
+                                sdl.ShowWindow(element.video)
+                            end
+                        end
+                    | sdl.WINDOWEVENTRESTORED() =>
+                        for element in elements.values() do
+                            if not element.video.is_null() then
                                 sdl.RaiseWindow(element.video)
                                 sdl.ShowWindow(element.video)
                             end
@@ -415,7 +459,10 @@ class App
         end
         
         sdl.EventState(sdl.EVENTSYSWMEVENT(), 1)
-        sdl.SetEventFilter[App](this~_filterForSysWMEventWindows[App]()?, sdl.UserData[App](this))
+        
+        ifdef windows then
+            sdl.SetEventFilter[App](this~_filterForSysWMEventWindows[App]()?, sdl.UserData[App](this))
+        end
         
         // create our renderer
         
@@ -717,6 +764,6 @@ class App
             out.out.print(msg)
         end
         
-        out.exitcode(1)
+        out.exitcode(1)
         
         error

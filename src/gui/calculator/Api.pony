@@ -1,6 +1,8 @@
 use "debug"
 use "../"
 
+use app = "../app"
+
 class Api
     var screen: RenderElement = RenderElement
     var rTotal: Array[String] = Array[String]

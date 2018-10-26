@@ -625,6 +625,10 @@ primitive GetMouseFocus
     fun apply(): Pointer[Window] =>
         @SDL_GetMouseFocus[Pointer[Window]]()
 
+primitive GetMouseState
+    fun apply(pos: Position): U32 =>
+        @SDL_GetMouseState[U32](addressof pos.x, addressof pos.y)
+
 primitive GetVersion
     fun apply(ver: MaybePointer[Version]): None =>
         @SDL_GetVersion[None](ver)
@@ -685,6 +689,10 @@ primitive SetHint
 primitive SetRenderDrawColor
     fun apply(renderer: Pointer[Renderer], r: U8, g: U8, b: U8, a: U8): U32 =>
         @SDL_SetRenderDrawColor[U32](renderer, r, g, b, a)
+
+primitive SetWindowInputFocus
+    fun apply(window: Pointer[Window]): U32 =>
+        @SDL_SetWindowInputFocus[U32](window)
 
 primitive SetWindowPosition
     fun apply(window: Pointer[Window], x: I32, y: I32): None =>
@@ -790,3 +798,7 @@ primitive PollWindowEvent
 primitive PollSysWMEventWindows
     fun apply(event: MaybePointer[SysWMmsgWindows]): I32 =>
         @SDL_PollEvent[I32](event)
+
+primitive PushEventMouseButtonEvent
+    fun apply(event: MaybePointer[MouseButtonEvent]): U32 =>
+        @SDL_PushEvent[U32](event)

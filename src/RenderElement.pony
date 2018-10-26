@@ -23,6 +23,7 @@ class RenderElement is ICanRunCommands
     var videoRenderer: Pointer[sdl.Renderer] = Pointer[sdl.Renderer]
     var videoInstance: Pointer[vlc.InstanceT] = Pointer[vlc.InstanceT]
     var videoPlayer: Pointer[vlc.MediaPlayerT] = Pointer[vlc.MediaPlayerT]
+    var videoPlaying: Bool = false
     
     new create() => None
     

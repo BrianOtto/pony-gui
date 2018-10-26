@@ -540,6 +540,7 @@ class Render
         re.videoRenderer = renderer
         re.videoInstance = vlcInstance
         re.videoPlayer = vlcMediaPlayer
+        re.videoPlaying = true
         
         re
     

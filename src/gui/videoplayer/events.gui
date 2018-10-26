@@ -1,0 +1,26 @@
+event group "button" type "mouseover"
+    run state "button-over"
+
+event group "button" type "mouseout"
+    run state "default"
+
+event group "button" type "mousedown"
+    run state "button-down"
+
+event group "button" type "mouseclick"
+    run state "button-click"
+
+event group "button" type "keydown"
+    run state "button-down"
+    run state "button-click"
+
+event group "button" type "keyup"
+    run state "default"
+
+event id "play-toggle" type "mouseclick"
+    run state "show-pause" when paused eq "1" else state "show-play"
+    set paused "1" when paused eq "0" else paused "0"
+    run api "pause"
+
+event id "stop" type "mouseclick"
+    run api "stop"

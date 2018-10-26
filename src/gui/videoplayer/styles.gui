@@ -26,3 +26,9 @@ style group "button" state "button-down"
 
 style group "button" state "button-click"
     fill "C0C0C0"
+
+style id "play-toggle-text" state "show-pause"
+    value "Pause"
+
+style id "play-toggle-text" state "show-play"
+    value "Play"

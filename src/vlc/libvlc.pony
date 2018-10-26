@@ -30,6 +30,10 @@ primitive MediaPlayerPlay
     fun apply(p_mi: Pointer[MediaPlayerT]): U32 =>
         @libvlc_media_player_play[U32](p_mi)
 
+primitive MediaPlayerPause
+    fun apply(p_mi: Pointer[MediaPlayerT]): None =>
+        @libvlc_media_player_pause[None](p_mi)
+
 primitive MediaPlayerRelease
     fun apply(p_mi: Pointer[MediaPlayerT]): None =>
         @libvlc_media_player_release[None](p_mi)

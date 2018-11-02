@@ -76,6 +76,9 @@ class Render
                                     var reNew = render(ge, w, h, wTotal, hTotal)?
                                     
                                     re.callbacks = reNew.callbacks
+                                    re.cursor = reNew.cursor
+                                    re.texture = reNew.texture
+                                    re.rect = reNew.rect
                                     re.states = reNew.states
                                 elseif not re.video.is_null() then
                                     (let width, let height) = _getWH(ge, w, h)

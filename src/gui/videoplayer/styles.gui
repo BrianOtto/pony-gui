@@ -27,8 +27,8 @@ style group "button" state "button-down"
 style group "button" state "button-click"
     fill "C0C0C0"
 
-style id "play-toggle-text" state "show-pause"
+style id "play-toggle-text" state "show-pause" persist "1"
     value "Pause"
 
-style id "play-toggle-text" state "show-play"
+style id "play-toggle-text" state "show-play" persist "1"
     value "Play"

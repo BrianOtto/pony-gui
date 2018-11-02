@@ -18,8 +18,8 @@ event group "button" type "keyup"
     run state "default"
 
 event id "play-toggle" type "mouseclick"
-    run state "show-pause" when paused eq "1" else state "show-play"
     set paused "1" when paused eq "0" else paused "0"
+    run state "show-play" when paused eq "1" else state "show-pause"
     run api "pause"
 
 event id "stop" type "mouseclick"

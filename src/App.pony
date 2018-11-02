@@ -95,6 +95,7 @@ class App
         _getElementsByEvent("mouseover")?
         _getElementsByEvent("mouseup")?
         _getElementsByEvent("resize")?
+        _getElementsByEvent("restore")?
         
         // event polling
         var poll = true
@@ -300,13 +301,19 @@ class App
                         
                         for element in elements.values() do
                             if not element.video.is_null() then
-                                Render(this).recalc(element.id, element)?
-                                
                                 sdl.RaiseWindow(element.video)
                                 sdl.ShowWindow(element.video)
                             end
                         end
                     | sdl.WINDOWEVENTRESTORED() =>
+                        Render(this).recalc()?
+                        
+                        if events.contains("restore") then
+                            for ge in events("restore")?.values() do
+                                _runEventCommands(ge, state)?
+                            end
+                        end
+                        
                         for element in elements.values() do
                             if not element.video.is_null() then
                                 sdl.RaiseWindow(element.video)
@@ -520,7 +527,7 @@ class App
         end
     
     fun ref _getElementsByEvent(eventType: String) ? =>
-        elementsByEvent.update(eventType, Array[(GuiEvent, RenderElement)])
+        elementsByEvent.insert(eventType, Array[(GuiEvent, RenderElement)])?
         
         if events.contains(eventType) then
             for ge in events(eventType)?.values() do
@@ -684,7 +691,9 @@ class App
                 match rc
                 | let rcType: RenderElement =>
                     let el = rc as RenderElement
-                    if el.guid != reState.guid then continue end
+                    
+                    // group will either be blank and match or have a value and match
+                    if (el.group == reState.group) and (el.guid != reState.guid) then continue end
                 end
             end
             
